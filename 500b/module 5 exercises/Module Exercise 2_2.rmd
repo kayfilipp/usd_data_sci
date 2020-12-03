@@ -1,0 +1,61 @@
+---
+title: "Module 5 Exercise 2"
+author: "Filipp Krasovsky"
+date: "11/30/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+2.2 Use R to understand how horsepower and weights are related to each other. Plot
+them using a scatter plot and color the data points using mpg. Do you see anything
+interesting/useful here? Report your observations with this plot. Now let us cluster the data on this plane in a “reasonable” number of groups. Show your plot where the data points are now colored with the cluster information and provide your interpretations. (10 points)
+
+```{r}
+#install packages
+library(RMySQL)
+
+#connect to db
+default_authentication_plugin='admin'
+db = dbConnect(MySQL(),user='root',password='admin', dbname='500b', host='127.0.0.1')
+
+#extract mpg data.
+mpg_df = fetch(dbSendQuery(db,"SELECT * FROM mpg"),n=-1)
+mpg_df = as.data.frame(mpg_df)
+
+#print head for sanity check
+head(mpg_df)
+```
+
+```{r}
+#plot horsepower and weight, color with mpg.
+library(ggplot2)
+ggplot(mpg_df,aes(horsepower,weight,color=mpg)) + geom_point()
+```
+Initial observations demonstrate two major points of interest:
+1. there is a very strong positive correlation between weight and horsepower.
+This is rather intuitive as the heavier a vehicle is, the more horsepower is required to propel it.
+
+2. Combinations of horsepower and weight with increased values for both are associated, on face value, with a lower mpg. 
+
+Given that the gradient of mpg falls between ~10 and ~50, we can create 4 different clusters for our kmeans.
+
+```{r}
+set.seed(20)
+mpgCluster <- kmeans(mpg_df[,4:5],4,nstart=20)
+
+ggplot(mpg_df,aes(horsepower,weight,color=mpgCluster$cluster)) + geom_point()
+```
+
+In this instance, the output of the kmeans clustering process can be interpreted as follows:
+Cluster 1 = 20-30 mpg
+Cluster 2 = 10-20 mpg
+Cluster 3 = 40-50 mpg
+Cluster 4 = 30-40 mpg
+
+Overall, the learning model captures the noise in the data well but makes
+some mistakes at smaller values of horsepower/weight.
+
+
