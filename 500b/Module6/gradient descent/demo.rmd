@@ -1,0 +1,48 @@
+---
+title: "Gradient Descent"
+output: html_notebook
+---
+
+```{r}
+#read in data
+data <- read.csv('data.csv',header=TRUE,sep=',')
+```
+
+
+```{r}
+#linear model 
+model <- lm(Y ~ X, data = data)
+summary(model)
+```
+```{r}
+#visualize
+attach(data)
+plot(X,Y,col=rgb(0.2,0.4,0.6,0.4),main = "LinReg")
+abline(model,col='red')
+```
+
+```{r}
+#generating the cost function
+#note: the %*% operator multiplies a matrix with its transpose
+
+cost <- function(x,y,theta){
+  sum(x%*% theta - y)^2 / (2*length(y))
+}
+
+#we have to parameters for our regression, m and b, so we declare a 2d vector
+theta <- matrix(c(0,0),nrow=2)
+num_iterations <- 300             #number of iterations for the gradient
+alpha <- 0.01                     #indicates the learning rate
+
+#storage for the values of cost/error and the parameters for all iterations.
+#passing num_iterations creates 300 indeces for each var.
+
+cost_history<-double(num_iterations)
+theta_history<-list(num_iterations)
+
+X<- cbind(1,matrix(x))
+
+
+```
+
+
