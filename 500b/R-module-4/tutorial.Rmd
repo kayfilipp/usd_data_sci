@@ -1,0 +1,110 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+min = function(a,b){
+  if (a<=b) return (a) else return (b)
+}
+
+print (min(10,11))
+```
+
+```{r}
+  #file.chose() lets us prompt the user for a file to look at.
+  df = read.table(file.choose(),header=TRUE,sep=",")
+```
+
+```{r}
+  #this is what a dataframe looks like.
+  summary(df)
+```
+
+```{r}
+  install.packages("ggplot2")
+```
+
+```{r}
+  df[1:4] #get columns 1-4
+  df[1,1:4] #get row 1, columns 1-4
+```
+
+
+```{r}
+#how to plot a histogram of a thing 
+library(ggplot2)
+ggplot(df) + geom_histogram(aes(x=MEDV),binwidth = 5, fill="blue")
+
+#and now a bar graph!
+ggplot(df)+geom_bar(aes(x=MEDV),fill="blue")
+```
+```{r}
+  avocado_ts <- read.csv('prices.csv')
+  print(avocado_ts)
+  plot(avocado_ts,type="o")
+  #correlation
+  cor(avocado_ts$TOB,avocado_ts$Price)
+```
+
+```{r}
+#subsetting data 
+av2 <- subset(avocado_ts,(avocado_ts$TOB > 2 & avocado_ts$Price > 20))
+av2
+```
+```{r}
+#Kmeans clustering 
+library(datasets)
+library(ggplot2)
+#use iris dataset
+head(iris)
+
+#graph initial spread
+ggplot(iris,aes(Petal.Length,Petal.Width,color=Species)) + geom_point()
+
+#3 cluster spread for petal length and width, hence the [,3:4]
+#nstart should be equal to the seed we  set
+#the number before n start is how many clusters we want
+set.seed(20)
+irisCluster = kmeans(iris[,3:4], 3, nstart=20)
+
+#table 
+table(irisCluster$cluster,iris$Species)
+
+#plot iris data and color using the cluster data 
+ggplot(iris,aes(Petal.Length,Petal.Width,color=irisCluster$cluster)) + geom_point() 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

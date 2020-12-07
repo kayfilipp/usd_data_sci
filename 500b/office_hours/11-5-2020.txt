@@ -1,0 +1,22 @@
+Office Hours 11-5-2020
+
+11-9-2020 -> partner assignment 
+
+Unix Resources
+	geeksforgeeks awk command linux examples
+	thegeekstuff.com linux commands 
+	tutorialspoint unix commands 
+Unix Commands
+	cut, 
+	grep, 
+	head, 
+	tial, 
+	awk, 
+	sort, 
+	is, 
+	du, 
+	sed, 
+	echo 
+R vs Python 
+	pure programming language -> python is better 
+	R is one of the main programming languages in data science, but python is still more widely used 
