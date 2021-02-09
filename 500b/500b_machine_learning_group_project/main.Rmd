@@ -1,0 +1,412 @@
+---
+title: "Online Shopper Intention Analysis"
+author: "Filipp Krasovsky, Sai Thiha"
+date: "12/12/2020"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Technical Overview:
+Implementation is done using R Version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak OOut"
+data pull conducted using a .csv file located in the same directory as the .rmd document.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+#import dataset
+shoppers <- read.csv("online_shoppers_intention.csv")
+library('cluster')
+library('dendextend')
+library('factoextra')
+library(ggvis)
+library(ggplot2)
+library("ggdendro")
+library("infotheo")
+library("dplyr")
+library("rms")
+head(shoppers)
+```
+
+
+Overview of variables:
+
+1.ProductRelated/ProductRelated_Duration - refers to the number of URLs viewed by a user in the ProductRelated category during a session as well as the total amount of time spent
+in each session browsing this type of URL in seconds. 
+Both of these are Ratio values with a meaningful zero point, that is - zero indicates an absence of any browsing activity in this context.
+
+2. Month - a nominal variable used for our time series analysis component.
+
+3. Informational/Informational_Duration - refers to the same context as #1 but for URLs categorized as Informational.
+
+4. Bounce Rates - refers to the rate at which a website is left without triggering any further correspondence with the Google analytics server. This is a numeric ratio level variable.
+
+5. Exit Rates - refers to the frequency at which a given page was the last in a browsing session. This is a numeric ratio level variable.
+
+6.PageValues - refers to the average value of a web page that the user visited prior to completing a purchase. This is a numeric ratio level variable where zero indicates a non-arbitrary lack of page value.
+
+7. TrafficType - this is a nominal variable which refers to the different types of web traffic that lead to the website. Although they are not mapped directly to corresponding sources, we can assume some examples include redirects, search results, and direct navigation to a URL.
+
+8. VisitorType - a nominal  variable for whether a user has been on the website before.
+
+9.Revenue - a nominal binary variable and the dependent variable of interest for this analysis, where True refers to the completion of a purchase.
+
+10. SpecialDay - a ratio variable that determines proximity of a given browsing session to a holiday.
+
+
+```{r}
+#data transformations and discretization 
+
+#subsetting
+shoppers <- subset(
+  shoppers,
+  select = c(
+    ProductRelated,
+    ProductRelated_Duration,
+    Informational,
+    Informational_Duration,
+    Month,
+    ExitRates,
+    PageValues,
+    TrafficType,
+    VisitorType,
+    SpecialDay,
+    Revenue
+  )
+)
+
+#Dependent Variable Transformtation
+shoppers$Revenue <- ifelse(shoppers$Revenue=="True",yes = 1,no = 0)
+
+#set up an alias for shoppers
+df <- shoppers
+
+```
+
+Having filtered for the variables of interest needed for our modeling approach, we then move on to visualization and possible reduction.
+In assessing the duration-url variabes, we can impose our subject matter knowledge on the issue to assert that if the number of URLs browsed for a given category is zero,
+then the duration for that URL  ought to also be zero.
+
+```{r}
+#get count of missing values
+sapply(df,function(x) sum(is.na(x)))
+```
+An initial overview shows us a mostly complete dataset with missing values for Informational and PageValues.
+Since we have no Apriori information on how page values are calculated, we have no choice but to omit these rows.
+
+Similarly, for Informational, we could use a proxy to remove some missing values by asserting that if the browsing duration is zero, the number of URLs must also be zero.
+This would be incorrect, however, as Google Analytics only begins to record a session after a trigger fires off, so it's conceivable that a user may have some browsing history. In any case, our large sample size justifies removal of both.
+
+```{r}
+#remove missing values for Informational and PageValues
+df <- subset(df,!is.na(df$Informational))
+df <- subset(df,!is.na(df$PageValues))
+
+```
+
+
+
+
+```{r}
+
+#plot product related, product related duration, and a graph with both.
+
+ggplot(df)+geom_bar(aes(x=ProductRelated),fill="blue")+ggtitle("Plot of ProductRelated")
+hist(df$ProductRelated_Duration,breaks = 100,freq = TRUE)
+ggplot(df, aes(ProductRelated,ProductRelated_Duration,color=Revenue))+geom_point()+geom_smooth(method = "lm")+ggtitle("Plot of ProductRelated vs. ProductRelated_Duration")
+```
+ProdudctRelated exhibits a strong right skew with a large concentration of values as zeroes - suggesting that many sessions involved no ProductRelated URLs.
+We can  make a similar observation about the browsing duration, although we must note in the final graph that the two exhibit what appears to be a strong correlation
+with each other. Coloring these pairs with the revenue variable doesn't provide much insight at this point, but we can make assertions about dimension reduction since the
+two variables move closely with each  other:
+
+```{r}
+
+#print summary statistics for both 
+
+print(summary(df$ProductRelated))
+paste("Variance:",var(df$ProductRelated))
+print(summary(df$ProductRelated_Duration))
+paste("Variance:",var(df$ProductRelated_Duration))
+paste("Correlation:",cor(df$ProductRelated,df$ProductRelated_Duration))
+```
+at an 86% correlation, we may consider removing one of the two variables in our modeling.
+
+```{r}
+ggplot(df)+geom_bar(aes(x=Informational),fill="blue")+ggtitle("Plot of Informational")
+hist(df$Informational_Duration,breaks = 100,freq = TRUE)
+ggplot(df, aes(Informational,Informational_Duration,color=Revenue))+geom_point()+geom_smooth(method = "lm")+ggtitle("Plot of Informational vs. Informational_Duration")
+
+print(summary(df$Informational))
+paste("Variance:",var(df$Informational))
+print(summary(df$Informational_Duration))
+paste("Variance:",var(df$Informational_Duration))
+paste("Correlation:",cor(df$Informational,df$Informational_Duration))
+```
+Initial observations suggest that Informational and it's duration are not strongly correlated enough to run into a colinearity problem,
+but we still have a case to make for removing Informational on the grounds that it's a near variance predictor, which we suspect due to its variance being ~1.
+The formal rule of thumb requires the following to be true:
+
+1. The ratio of the first most frequent value to the second most frequent value is large
+2. The number of unique values relative to the sample size is small ()
+
+We know the two most frequent values are 0 and 1:
+
+```{r}
+fr = length(df$Informational[df$Informational==0])/length(df$Informational[df$Informational==1])
+paste("frequency ratio:",fr)
+```
+Which is sufficiently high to raise suspicion. After we inspect the ratio of unique values to n:
+```{r}
+ur = length(unique(df$Informational)) / length(df$Informational)
+paste("Unique values to sample:",ur)
+```
+We can conclude that Informational can be disposed of in a modeling context.
+
+```{r}
+#delete Informational column 
+df$Informational <- NULL
+```
+
+```{r}
+#Observations on Exit Rates
+hist(df$ExitRates,main = "Histogram of Exit Rates")
+print(summary(df$ExitRates))
+paste("std dev:",sd(df$ExitRates))
+```
+We can observe a right skewed distribution of exit rates where the expected exit rate is 4% and a median exit rate of 2%.
+This dimension does not justify discretization - although it contains a somewhat multimodaldistribution, it also  exhibits continuous behavior
+that offsets this dynamic.
+
+This variable appears to be dispersed enough to be an appropriate input for modeling purposes, and we can begin exploring its relationship
+with others from this point, namely page value.
+
+```{r}
+#Observations on Page Values
+hist(df$PageValues,main = "Histogram of Page Values",breaks = 30)
+print(summary(df$PageValues))
+paste("std dev:",sd(df$PageValues))
+paste("unique to n ratio:",length(unique(df$PageValues)) / length(df$PageValues))
+```
+Page values seems to exhibit a strong right skew and the majority of values are near zero. It's possible that this might be related to URL browsing activity, but first
+we can inspect it's relationship with exit rates:
+
+```{r}
+df <- subset(df,!is.na(df$PageValues))
+ggplot(df, aes(ExitRates,PageValues,color=Revenue))+geom_point()+geom_smooth(method = "lm")+ggtitle("Plot of Exit Rates vs. Page Values")
+```
+While we do not see any direct linear correlation between exit rates and page values, we do notice that the majority of nonzero page values occur at a value of exit rates < 10%.
+Similarly, coloring this distrubtion with Revenue,  we observe that almost all sales occur on pages below this threshhold. From here, we can justify  creating a discrete component for this variable. We retain the unmodified value for redundancy in case this analysis fails.
+
+```{r}
+#we create four equally distributed bins: 
+#0-0.05, 0.05-0.1,0.1-0.15,0.15-0.2
+
+
+df$exit_rate_disc <- infotheo::discretize(df$ExitRates,nbins = 4)
+```
+
+We can further explore the relationship between page values and browsing patterns:
+
+```{r}
+ggplot(df, aes(Informational_Duration,PageValues,color=Revenue))+geom_point()+geom_smooth(method = "lm")+ggtitle("Plot of Informational Duration vs Page Values")
+ggplot(df, aes(ProductRelated_Duration,PageValues,color=Revenue))+geom_point()+geom_smooth(method = "lm")+ggtitle("Plot of ProductRelated Duration vs Page Values")
+```
+
+Again, there is no strong correlation between duration and page values for either type of URL.
+Given that ProductRelated URL browsing moves with duration, and Informational URLs have been disposed,
+there is no need to inspect either for unique trends.
+
+From here, we can unfold a brief exercise in unsupervised learning between visitor types and browsing patterns
+for insight into what kind of URLs different demographics engage with:
+
+```{r}
+dfvisitor <- select(df, ProductRelated_Duration, VisitorType)
+
+d <- dist(dfvisitor, method = "euclidean")
+
+AHC <- hclust(d, method = "complete" )
+
+plot(AHC, cex = 0.8, hang = -1, main = "Dendrograms for Agglomerative Clustering") 
+```
+
+Moving forward, we can inspect the traffic type variable:
+
+```{r}
+hist(df$TrafficType,main="Histogram of Traffic Type")
+```
+While distribution of traffic type is, at it's core, nominal,we notice that the majority of traffic comes from sources 1-5,
+with the mode obviously being 1. We do not have mapping for the actual source  of traffic, but can still apply it in analysis.
+Specifically, we can see how much of each traffic type has new and returning customers.
+
+Before we proceed, however, can eliminate the "Other" values in visitor type:
+```{r}
+df <- subset(df,!(df$VisitorType=="Other"))
+
+visitors.unique <- unique(df$VisitorType)
+traffic.unique  <- unique(df$TrafficType)
+
+for (traffic in traffic.unique){
+  num_new_visitors = df$TrafficType[df$TrafficType==traffic  & df$VisitorType=="New_Visitor"]
+  print(paste("traffic type:",traffic,"ratio of new visitors:",length(num_new_visitors)/length(df$TrafficType)))
+}
+```
+There seems to be considerable variation between traffic type and visitor type.
+provided that visitor type has any sort of connection with revenue, both of these would become crucial variables for predicting the possibility of success (revenue=1):
+
+```{r}
+nv.sale   <-length(df$Revenue[df$Revenue==1  & df$VisitorType=="New_Visitor"]) / length(df$Revenue) 
+nv.noSale <-length(df$Revenue[df$Revenue==0  & df$VisitorType=="New_Visitor"]) / length(df$Revenue)
+
+paste("New visitors % of Revenue = 1 ",nv.sale)
+paste("New visitors % of Revenue = 0 ",nv.noSale)
+```
+Without moving into extensive hypothesis testing, we can observe that browsing sessions that result in sales can be associated with a lower rate of new visitors,
+or conversely, with a higher rate of returning visitors. Therefore, we can provide some validity to the asertion that visitor type and traffic type both play a crucial
+role in predicting the probability of a sale.
+
+
+Data Analysis Component
+
+To begin our analysis, we observe that REVENUE is the dependent variable, with the aforementioned variables in the EDA serving as potential inputs.
+We will be conducting logistic regression as the response variable is a binary variable that is not numerical and had to be transformed from
+y = {TRUE,FALSE} to y={0,1}:
+
+```{r}
+
+#declare necessary categorical variables 
+df$Month        <-as.factor(df$Month)
+df$TrafficType  <- as.factor(df$TrafficType)
+df$VisitorType  <- as.factor(df$VisitorType)
+df$Revenue      <- as.factor(df$Revenue)
+
+#declare training dataset and testing dataset
+train <- df[1:10785,]
+test  <- df[10786:11985,]
+
+train <- subset(
+  train,
+  select = c(
+    ProductRelated,
+    ProductRelated_Duration,
+    Informational_Duration,
+    ExitRates,
+    PageValues,
+    VisitorType,
+    Revenue,
+    Month,
+    TrafficType
+  )
+  
+)
+
+
+
+#model logistic regression
+#we change to maxit=100 given the breadth of the variables
+model <- glm(Revenue ~ ., family=binomial(link='logit'), data = train,maxit=100)
+
+#print summary
+summary(model)
+```
+Initial Observations demonstrate several notable findings:
+
+1. ProductRelated_Duration, ExitRates, and PageValues are all signifcant predictors at alpha = 0.05.
+2. TrafficType islargely insignificant.
+3. Month is also largely insignificant - however, the months that are (November, December, etc.) are all intuitively within proximity of notable
+holidays such as thanksgiving and valentine's day, so we can assume that adding in the specialDay variable will provide a useful proxy.
+
+From here, we can proceed to the second round of modeling:
+
+```{r}
+
+#reinit testing and training:
+
+#declare training dataset and testing dataset
+#train on 90% of the data
+train <- df[1:10785,]
+test  <- df[10786:11985,]
+
+train <- subset(
+  train,
+  select = c(
+    ProductRelated,
+    ProductRelated_Duration,
+    Informational_Duration,
+    ExitRates,
+    PageValues,
+    VisitorType,
+    Revenue,
+    SpecialDay
+  )
+)
+
+test <- subset(
+  test,
+  select = c(
+    ProductRelated,
+    ProductRelated_Duration,
+    Informational_Duration,
+    ExitRates,
+    PageValues,
+    VisitorType,
+    Revenue,
+    SpecialDay
+  )
+)
+
+
+#model logistic regression
+#we change to maxit=100 given the breadth of the variables
+model <- glm(Revenue ~ ., family=binomial(link='logit'), data = train,maxit=100)
+
+#print summary
+summary(model)
+
+
+
+```
+Despite being more succint and compact than the previous model, we observe that most of the variables, including specialDay , end up being significant.
+What we can interpret from these findings is as follows:
+
+1. Browsing Duration for either category of URL used is not significant.
+2. The number of ProductRelated URLs browsed  is positively significant in determining the likelihood of a purchase.
+3. All else constant, pages with higher exit rates are associated with a smaller probability of purchase, as well as returning visitors and higher proximity to a holiday.
+4. The larger a website's page value is, the higher the association with a purchase is.
+
+We can now observe how our model performs against the test values.
+
+```{r}
+fitted.results <- predict(model,newdata=test,type = 'response')
+fitted.results <- ifelse(fitted.results >  0.5, 1, 0)
+difPred        <- fitted.results != test$Revenue
+
+misClasError  <- mean(fitted.results != test$Revenue)
+print(paste("Accuracy",1 - misClasError))
+```
+The accuracy  of our model in predicting the labels of the test instances is about 84%, which suggests that the model performed decently.
+Finally, we can plot the Receiver Operating Curve and calculate the area under the curve.
+
+```{r}
+library(ROCR)
+p <- predict(model,newdata=test,type = 'response')
+pr <- prediction(p,test$Revenue)
+prf <- performance(pr,measure="tpr",x.measure="fpr")
+plot(prf)
+
+auc<-performance(pr,measure="auc")
+print(auc@y.values)
+```
+Given that our AUC is closer to 1 than to 0.5 at 83.6%, we appear to have a good and balanced classification model.
+
+
+
+
+
+
+
+
+
+
+
