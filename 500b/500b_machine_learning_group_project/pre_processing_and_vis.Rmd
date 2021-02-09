@@ -1,0 +1,248 @@
+---
+title: 'Analysis of Online Shopper Intentions: Initial Data Exploration'
+author: "Filipp Krasovsky"
+date: "12/9/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Overview of Dataset
+
+<p>
+The dataset being analyzed provides a survey of n=12,330 distinct user sessions measured across the scope of one year
+and classifies URLs visited into administrative, informational, and product related websites. Triggers during each browsing session allowed for the recording of this information included tracking user activity such as moving from one page to another. This document operates off of a csv file located in the same directory and imports the data initially using the read.csv() function.
+
+</p>
+
+```{r}
+#pull csv data and overview
+shoppers.data <- read.csv("online_shoppers_intention.csv")
+```
+
+
+For the purposes of this project, we will first be evaluating a regression analysis of productRelated_Duration and Informational_Duration against Revenue. The first two variables translate to how much time was spent by any given user over the course of a year browsing URLs about a product and informational URLs, respectively. Revenue, the final variable, is a boolean type value that can be converted from {T,F} to {1,0} for the purposes of logistic regression.
+
+Aside from this, this project also intends to conduct a time series analysis based on the MONTH variable as well as the new and returning visitor data (visitor type) distribution and the traffic type distribution.
+
+```{r}
+#Inspect which fields are missing values with amelia,
+#Subset our data down to the relevant fields with dplyr
+library(Amelia)
+library(dplyr)
+
+#dimension reduction
+shoppers.data <- select(
+  shoppers.data,
+  Month,
+  Informational,
+  Informational_Duration,
+  ProductRelated,
+  ProductRelated_Duration,
+  Revenue,
+  VisitorType,
+  TrafficType,
+  BounceRates,
+  PageValues
+)
+
+print(head(shoppers.data,n = 10))
+print(tail(shoppers.data,n = 10))
+```
+Dimension descriptions:
+Month:
+  refers to the month that the session was logged.
+  
+Informational,ProductRelated:
+  refers to the number of Informational or Product Related URLs a user visited during the browsing session,                                                    respectively.
+  
+Informational_Duration,ProductRelated_Duration:
+  refers to the amount of time spent in seconds across all URLs for the given category.
+  
+Revenue*:
+  A binary figure indicating whether the sale was made (1) or not (0). 
+  This is the dependent variable.
+VistorType:
+  Records whether a visitor has had previous sessions on the e-commerce site.
+TrafficType:
+  A range of integers from 1 to 20 serving as dummy variables for the type of traffic google analytics recorded.While the documentation for this data does not relate these to any specific source, we can infer that the range probably includes direct traffic, referrals from other sites, and traffic from search engines (bing,google,yahoo).
+BounceRate:
+  Refers to the frequency at which a page is exited without further requests to the analytics server.
+  This is a ratio variable ranging from 0 to 1.
+PageValues:
+  The average value for a web page that a user visited prior to making a transaction. This is a ratio variable.
+
+
+
+```{r}
+#transformation 1: we will be using revenue for logistic regression, so we can transform this variable to a numeric binary.
+shoppers.data$Revenue[shoppers.data$Revenue=="True"]  = as.numeric(1)
+shoppers.data$Revenue[shoppers.data$Revenue=="False"] = as.numeric(0)
+
+#print the number of missing variables in each field.
+print(sapply(shoppers.data,function(x) sum(is.na(x))))
+```
+
+
+An Initial overview of the data suggests a negligible amount of missing values - 128 from the Informational column and 135 for page values. From here, we can interweave subject matter knowledge into how the data ought to look.
+We know that, because browsing session time is based on recording, it's possible for an individual to browse a URL without having a duration recorded. However, if no URLs were visited at all, we can be confident that the duration ought to be zero. We can impose this logic on the information and product duration dimensions. However, the crux of our problem is that the number of urls is missing, and we cannot be sure from the duration values what the value ought to be.
+
+
+On face value, some logical conclusions can be made about the interpolation process for this dataset. Given that Informational refers to the number of URLs visited, and Informational_Duration refers to the amount of time spent in aggregate on those URLs, we can safely interpolate any missing values for duration with zero if the number of urls visited is also zero. For the converse situation, we simply omit the data points given the breadth of our sample.
+
+Similarly, in conduct analysis based on the visitor type, we lack the context necesarry to handle the "other" value for the visitorType column, and can remove these values as well.
+
+For page values, no proxies seem to be able to suggest the page value, so it's in our best interest to remove those rows.
+
+```{r}
+#interpolate Informational_duration with zero when Information is zero.
+#do the same for ProductRelated.
+
+shoppers.data$Informational_Duration[shoppers.data$Informational==0] = 0
+shoppers.data$ProductRelated_Duration[shoppers.data$ProductRelated==0] = 0
+
+#exclude the rows with null values
+shoppers.data = subset(shoppers.data,!is.na(shoppers.data$Informational))
+#exclude "other" visitors
+shoppers.data = subset(shoppers.data,shoppers.data$VisitorType != "Other")
+#exclude null page values
+shoppers.data = subset(shoppers.data,!is.na(shoppers.data$PageValues))
+
+#print the number of missing variables in each field.
+print(sapply(shoppers.data,function(x) sum(is.na(x))))
+```
+Having removed all missing and inoperable values, we can move on to removing predictors. We star by visualizing each variable, measures of centrality, and the type of variable we're dealing with.
+
+```{r}
+
+summarize_dim <- function(x,x_name,ylim){
+  #plot data
+  barplot(
+    prop.table(
+      table(x)
+      )
+      ,main=paste("Barplot of ",x_name)
+      ,ylim = ylim
+  )
+  
+  #unique_vals to n ratio
+  x_to_n = length(unique(x)) / length(x)
+  
+  print(paste("SUMMARY FOR:",x_name))
+  print(paste("Mean:",mean(x)))
+  print(paste("Variance:",var(x)))
+  print(paste("Std Dev:",sd(x)))
+  print(paste("Unique values to sample size:",x_to_n))
+  print("")
+  
+}
+
+summarize_dim(shoppers.data$Informational,"Informational",c(0,1))
+summarize_dim(shoppers.data$ProductRelated,"ProductRelated",c(0,0.05))
+
+```
+We can identify the Informational and ProductRelated values as ratio values with a non-arbitrary zero point.
+
+Initial observations suggest that the Informational variable may be a near-zero variance predictor given that:
+1. the variance itself is small
+2. the ratio of unique values to the total sample size is less ~0.1%
+3. the ratio of the first most frequent value to the second most frequent value is significantly large.
+
+In order to be generally considered a near-zero variance predictor, our variable must satisfy that the ratio of unique values is 10% of the sample size
+and that the ratio of the first and second most frequent values is significantly large. Given that we satisfy both, it's possible that excluding Informational would be helpful.
+
+These criteria do not apply to ProductRelated for the fact that the barplot seems to suggest a right skewed distribution of values, but not in such a way that the frequency favors only one value.
+
+```{r}
+#remove Informational
+shoppers.data <- subset(shoppers.data,select = -c(Informational))
+```
+
+```{r}
+#visualize Informational_Duration and ProductRelated_Duration
+summarize_dim(shoppers.data$Informational_Duration,"Informational Duration",c(0,1))
+summarize_dim(shoppers.data$ProductRelated_Duration,"ProductRelated Duration",c(0,0.06))
+
+```
+
+Informational_Duration and ProductRelated_Duration are also Ratio level variables, measured in seconds.
+Both have a relatively robust rate of dispersion and neither have a low enough value to sample size ratio to 
+justify exclusion for being a near-zero variance predictor. 
+
+```{r}
+  #plot data
+  barplot(
+    prop.table(
+      table(shoppers.data$VisitorType)
+      )
+    ,main=paste("Barplot of Visitor Type")
+    ,ylim = c(0,1)
+  )
+
+  #plot data
+  barplot(
+    prop.table(
+      table(shoppers.data$TrafficType)
+      )
+    ,main=paste("Barplot of Traffic Type")
+    ,ylim = c(0,1)
+  )
+  
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+  
+  print("Mode for traffic type:")
+  print(Mode(shoppers.data$TrafficType))
+```
+Since visitor type is a nominal qualitative variable, we don't have any measures of centrality or dispersion for it, but can identify it as a useful predictor.
+
+Traffic type is also a nominal variable where each value corresponds to a different type of web traffic. Unfortunately, the readme for this dataset doesn't specify a mapping. Nevertheless, assuming the inputs we receive from a future flow of data are standardized, this dimension ought to help in modeling.
+
+```{r}
+summarize_dim(shoppers.data$BounceRates,"bounce rates",c(0,0.5))
+summarize_dim(shoppers.data$PageValues,"page values",c(0,0.01))
+```
+Bounce Rates refer to the phenomenon of an individual leaving a page without triggering any events - this is a ratio variable with a high level of dispersion for values beyond 0, which constitute more than 60% of the dataset, suggesting the possibility of being a powerful explanatory variable in determining whether a sale happened.
+
+Page values, as previously defined, constitute the average value of a page a user visited before making a purchase, and is also a ratio variable.
+Both of these metrics have a large dispersion and high enough unqiue value to sample ratio to be included in our modeling.
+
+We will be excluding visualizations for month, which is our time series variable, as well as REVENUE, which is our binary dependent variable, so measures of centrality and dispersion will not provide particular insight.
+
+From here, we can move to visualizing patterns and correlations between our remaining variables:
+
+```{r}
+print(head(shoppers.data))
+```
+
+We can first explore the relationship between ProductRelated URL sessions and the duration of time spent in total on them - this is an intuitive connection to make on face value given the edge case explored earlier in this paper - a ProductRelated value of zero necessitates a duration of zero.
+
+```{r}
+
+library(ggplot2)
+
+ggplot(shoppers.data,aes(ProductRelated,ProductRelated_Duration,color=Revenue)) +
+geom_point()+
+geom_smooth(method=lm)
+
+print(cor(shoppers.data$ProductRelated,shoppers.data$ProductRelated_Duration))
+```
+
+The scatter plot confirms our initial suspicion insofar as one variable is very strongly associated with the other (>80%), which suggests that we may be able to remove one of these variables after initial modeling.
+
+In a similar vein, coloring the data points by whether they included a sale or not suggests that increasing combinations of productRelated URLs and browsing durations may not necesarrily lead to a higher probability of revenue, but this can be unpacked better through logistic regression.
+
+Another intuitive relationship to explore is traffic type and user type. It's conceivable that individuals who are returning visitors may be more likely to access a site using direct navigation or search engines, while new users may be more prone to accessing the site through referals.
+
+
+
+```{r}
+
+```
+
+
+
+

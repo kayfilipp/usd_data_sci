@@ -1,0 +1,29 @@
+1-21-2021
+
+1. how do we make the business problem more complicated?
+What does the thought process behind making it more granular as opposed 
+to keeping it high level? could you set up time to walk through an example? 
+
+	ex: availability of water in Italy 
+	want to predict on rainstorms where water will be 
+	
+	>backtrack from problem 
+	why are we specifically trying to do that?
+	why would the business take interest in that? 
+	
+	we need to know what the water levels are so we can [xyz] 
+	
+	another ex: we want to know where a device fails so we can 
+	send technicians for preventative measures 
+	
+	another ex: behavioral data for marketing 
+	who's gonna click and buy something 
+	you have to focus on why youre doing that, you get bumped 
+	back into business understanding 
+
+2. on data and information resources in the documentation:
+
+write down how to get access, who to talk to, etc. 
+(does that mean the script for an API call if its present?)
+
+talk about cardinality and one-to-many relationships , etc. 

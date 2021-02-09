@@ -1,0 +1,114 @@
+Foundations of Data Science
+1-14-21
+
+CRISP-DM Process 
+
+1. Business Understanding 
+2. Data Understanding 
+3. Data Preparation 
+4. Modeling 				--> feeds back to #3
+	also includes how the model did, MSE, AIC/BIC, etc
+5. Evaluation 				--> feeds back to #1 
+	explaining performance to business people 
+6. Deployment 
+
+Primary components of Agile data science 
+1. Constant Iteration
+	Insight usually comes from repeated attempts - ie in SQL, the first query isn't the insightful one - the twenty fifth is.
+2. Ship Intermediate Output - even failed stuff 
+	not iterating and sending work to teammates leads to the death loop, whre a lot of time is spent creating a product nobody wants.
+3. prototype experiments over implementing tasks 
+	must conceptualize work as experimental rather than task oriented
+4. Integrate the tyrannical opinion of data 
+	usually, customers, businesspeople, etc are stakeholders 
+	take what the data has to say about a product into account as well about a feature
+5. oscillate on the value-data pyramid during work 
+	
+	the value-data pyramid 
+	records
+	charts
+	reports
+	predictions
+	actions 
+	
+6. too dumb to write down 
+7. describe the process, not just the end state. 
+
+why the waterfall method is bad 
+issues with the methodology hid the poor state of the 
+product from management, hard deadlines made the 
+product unshippable, users end up being disinterested 
+after product lanch 
+
+the application concept was only tested in user 
+focus groups and managerialreviews
+the prediction presentation was designed upfront without
+taking the model and its behavior into consideration
+
+a hard deadline is bad 
+integration occured at the end of development 
+mock ups without real data were used throughout the project 
+
+////////////research vs application development////////
+
+research and application dev timeline are at odds;
+usually makes every analytics product a waterfall project.
+the scientific method has no specified endpoint, and research can take an uncertain amount of time 
+as compared to software engineering.
+
+Solution: 
+Technical debt : a concept in programming - extra dev work that arises when code that is easy to implement short term is used instead 
+of applying the best solution.
+
+deadline pressure creates technical debt, and hurts future deadlines.
+
+in DS, we tolerate ugliness more until something 
+has been found useful enough to retain and reuse.
+applying SWE standards to DS would slow down productivity.
+
+In DS, code should be good eventually as opposed to
+immediately.
+
+///////////The Pull of the waterfall 
+
+the stack of a big data app is very complex and 
+the wide pipeline can result in a trajectory towards 
+the waterfall model. 
+
+if tasks are completed in sprints, the thickness 
+of the stack and the team combine to force a waterfall.
+
+iterating inside of sprints is one solution to creating 
+a waterfall. if we wait for the previous dependency to finish 
+before implementing their work, the process becomes 
+a step based waterfall.
+
+THE DATA SCIENCE PROCESS 
+
+1. Specific ship date is surrendered in favor of 
+transparency on what the team is actually doing 
+
+the DS team should be tasked on identifying value 
+to address a business problem. 
+The form the deliverable takes is addressed through 
+Exploration and research. 
+
+To predict a deadline, we can inspect their current state 
+of work. You can't tell when or what you get, 
+but you do have a constant and shippable progress report.
+
+TEAM ROLES 
+
+1. customers - use product, receive value, supply interest 
+2. business dev - signs customers, creates traction 
+3. marketers - talk to customers to decide which markets to pursue 
+4. Product managers - take in the perspective of each role 
+5. UX designers fit the design of the data to the customer 
+6. Interaction designers create interactions to help users find value 
+7. Web Developers - create web apps that deliver data 
+8. Engineers - build systems that deliver the data to an app 
+9. DScientists - explore/transform data to create value for customers 
+etc...
+
+
+
