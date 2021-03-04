@@ -1,0 +1,287 @@
+Fundamentals of Data Science, Chapter 9 
+
+def terms:
+	hold out test 
+	peeking 
+	misclassification rate 
+	classification accuracy 
+	confusion matrix 
+	lucky split 
+	cross fold validation 
+	jacknifing 
+	bootstraping
+	out of time sampling 
+	precision
+	recall 
+	f1-measure 
+	average class accuracy 
+	
+
+questions: 
+	1. when do we use average class accuracy instead of precision/recall? 
+	2. when do we use the f1 measure instead of precision or recall? 
+	is it generally more insightful? 
+	3. will there ever be a situation where the target level imbalance 
+	exists in one model but not another? how do we compare then? 
+
+1. measuring misclassification rate via hold out test 
+(evaluation portion of crisp-dm)
+
+2. def hold-out-test set -> random sampling of a portion of the data in the 
+ABT (analytics base table) generated in the data prep phase of crisp-dm
+using a holdout avoids peeking 
+
+3. def peeking: the phenomenon of a model being trained on the testing sample,
+which provides misleading accuracy figures/classification rate 
+we want to generalize to instances beyond the training set 
+
+4.  def misclassification rate = (num correct predictions)/(num predictions)
+
+4b. def confusion matrix:
+	TP | FN 
+	-------
+	FP | TN 
+	
+the confusion matrix provides slightly more insight into what kind of 
+ miscalculations are happening more often 
+misclassification rate: FP + FN / (FP+FN+TN+TP)
+
+def classification accuracy: (TP+TN)/(FP+FN+TN+TP)
+
+
+5. Designing Evaluation Experiments 
+
+hold out sampling: use a holdout set to evaluate accuracy 
+validation set: a third sample outside the training set used to tun particular 
+aspects of a model 
+	
+	[need more clarification here]
+	[how does validation set help with overfitting?]
+	[tuning?]
+	
+general recommendations 
+	50:20:30 or 40:20:40 for training/validation/test 
+	validation sets avoid overfitting with the help of gradient descent algorithms 
+	
+as the number of training iterations increases, there's a certain point where 
+the performance error on both the training and validation set is optimally low and 
+then goes back up. that critical point is our ideal model.
+
+problems with hold-out sampling: 
+
+need a lot of data - when this is not the case, we get bad results 
+sometimes we get a lucky split 
+
+def lucky split: 
+the training and testing set happen to split the difficult and easy instances of 
+data into two different sets. this can be fixed by k-fold cross validation.
+
+def k-fold cross validation: 
+the data is divided into k equal sized folds, and k separate evaluation 
+experiments are performed. the data in the 1st fold is used as the test set,
+and the remaining k-1 folds are the training set. this is done 
+iteratively across the dataset and the performance measures are 
+collected across all instances and aggregated into an average. 
+
+10-fold cross validation is most common. 
+
+def leave-one-out-cross-validation/jacknifing:
+an extreme k-fold validation where the number of folds is the same as the 
+number of training instances. each fold contains only one instance, so for 
+N rows we do N predictions. 
+
+we do this when data size is too small for other forms of validation.
+
+def bootstrapping:
+works for very small datasets (n<300)
+a random selection of m instances is taken to generate a test set 
+and the remaining balance is used for training
+we do this for k iterations, and the average of all perf. measures is gives us 
+an overview of the model. 
+
+def out of time sampling:
+works with time series 
+we can build the training set from one year and 
+testing set from another year 
+warning: must be big enough to capture all possible seasonalities 
+that might show up in the model 
+
+/******* Confusion-Matrix-Based performance measures 	******/
+
+basics: true positive, true negative, false positive, false negative 
+higher values of TPR and TNR indicate better model performance 
+
+advanced: precision, recall, f1 measure precision 
+
+precision: TP/(TP+FP)
+recall = TP/(TP+FN) 
+
+recall = true positive rate 
+tells us how confident we can be that all instances with the positive target level 
+were identified 
+
+precision tells us how confident we can be that an instance 
+predicted to have positive target lvl actually has a positive one 
+
+higher values in recall and precision = better model 
+
+EXAMPLE:
+	Spam email classification 
+	spam = positive level 
+	ham = negative level 
+	
+	precision would measure how often the emails marked as spam are really spam 
+	recall would tell us how much of the spam mail didn't get filtered out of inbox 
+	
+	having these metrics allows us to tune our model to allow more or less spam 
+	depending on the business logic 
+	
+def F1-Measure:
+	a single performance measure that collapses recall and precision 
+	into a harmonic mean 
+	
+	=2 * (precision * recall)/(precision + recall) 
+	=2 * (TP/(TP+FP)) * (TP/(TP+FN)) / (TP/(TP+FP)) + (TP/(TP+FN))
+	
+	harominc means tend to smaller values and avoid large outliers,
+	which helps us detect errors 
+	
+f1-measure, recall, and precision are good measures for prediction with 
+a binary target and place an emphasis on the positive level. 
+
+
+def average-class-accuracy:
+	ex: predict if a customer will churn 
+	
+			prediction 
+			non churn	churn 
+t non churn 	90			0
+a churn 		9			1
+r
+g where churn is the positive level 
+e
+t	
+
+observation: the acuracy for the model is 91%, but this is imbalanced 
+because 90 instances hae the non-churn level and only 10 have the churn level 
+the performance on one overwhelms the other, making classification accuracy 
+inaccurate. 
+
+formula: 
+			1/|levels(t)| * SIGMA(recall[i]) for i in levels(t)
+			
+	levels(t) = the set of levels that the target feature can assume 
+	|levels(t)| = size of this set 
+	recall(i) = recall achieved by a model for the level i 
+	
+implementation:
+
+	1/|levels(t)| = 1/2 
+	recall(i) => 1 + 0.1 
+		breakdown:
+		for (target = non-churn):
+		100% true positive 
+		for (target = churn)
+		1/10 = 10% true positive 
+		
+	therefore:
+	avg class accuracy = 0.5 * (1.1) =.55
+	
+example 2:
+				prediction 
+				nonchurn	churn 
+target 	nonchurn	70		20 
+		churn 		2		8 
+		
+1/levels(t) = 1/2 
+recall(i) for i in levels: = (70/90) + (8/10) = .778 + 0.8 = ~.7888
+
+
+
+model 2 would be considered a better performer than the first,
+which is dcontrary to the classification accuracy but is more important 
+because of the target level imbalance. 
+
+TLDR harmonic mean gives us a very pessimistic view of the model, 
+unlike the arithmetic mean 
+
+
+/************	Profit Matrix	 ******************/
+
+correctly classifying the positive target is not always as valuable 
+as correctly identifying the negative target. 
+Incorretly classifying a customer as likely to churn (not renew their subscription)
+is the cost of a small bonus that would be given to that customer to help 
+retain them in the company pipeline
+
+however, the cost of misclassifying a customer who was a churn risk 
+as a non-risk has a much largely cost - the lifetime asset value.
+one way to account for this is with a profit matrix: 
+
+TP-profit: profit arising from a correct positive prediction 
+FN-profit: profit arising from an incorrect negative prediction 
+(positive or negative)
+...etc 
+
+values are determined through domain expertise (duh) 
+
+EXAMPLE:
+	prediction problem in which a payday loan company has a credit scoring model for 
+	predicting the likelihood of default based on 
+	age,occupation,assets, etc. -> (good borrower, bad borrowers)
+	
+	assume that we have historical data to suggest that:
+	1. good is the positive target 
+	
+		(prediction,target )
+	TP => (good,good) 	=> 140
+	TN => (bad,bad)		=> 0
+	FP => (good,bad)	=> -700
+	FN => (bad,good)	=> -140
+			
+				prediction 
+				good	bad 
+	target good 140		-140
+		   bad 	-700	0 
+		   
+interpretation: 
+	1. the profit arising from correctly predicting a good borrower is 140.
+	2. incorrectly identifying someone as a bad payer leads a profit of -140 as the 
+	company foregoes potential interest payments 
+	3. incorrectly predicting the good level for a potential borrower who 
+	goes on to default results in a loss of 700
+	4. if we identify an individual as being a bad payer correctly results in 
+	no business transaction - 0.
+	
+Model application:
+
+	model confusion matrix * profit matrix 
+	
+	ex: KNN model 
+	x axis: predict (good,bad)
+	y axis: target (good,bad)
+	[57, 3]     * [140,-140] = overall profit of 560
+	[10, 30]	  [-700,0]
+	
+	ex: decision tree 
+	[43,17]  *    [140,-140] = overall profit of 1540
+	[3,37]		  [-700,0]
+	
+	the decision tree is more profitable because it identifies 
+	bad borrowers as good (ie, a false positive) less often, which
+	is the costliest mistake in our matrix. 
+	
+
+
+/*****************   prediction scores   ********************/
+
+in all cases for classification models, we produce a prediction score 
+and a threshold process is used to convert this into a target feature 
+
+ie logistic regression produce a probability for the target that is converted 
+into a categorical prediction using a threshold 
+
+threshhold (score,0.5) => if(score >=0.5 then 1 else 0)
+
+
+
