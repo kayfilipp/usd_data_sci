@@ -1,0 +1,705 @@
+Tan, P. N., Steinbach, M., Karpatne, A., & Kumar, V. (2019). Introduction to Data Mining (2nd ed.). Pearson
+Chapter 3: 3.4, 3.5, 3.6, 3.7, 3.8, & 3.9
+Chapter 4: 4.1, 4.2, 4.3, 4.4, & 4.5
+	
+Larose, C., & Larose, D. (2019). Data Science Using Python and R. John Wiley & Sons, Inc.
+Chapter 5
+Chapter 7
+Chapter 8
+
+
+Chapter 3.4-3.9
+
+	3.4 overfitting{
+		case for decision trees:
+		as the number of leaf nodes increases from 1 to inf, at some point the training and testing errors begin convering on each other,
+		and once the number of nodes gets too large, the testing error goes back up. this is overfitting.
+		
+		a. tldr overfitting the training data causes our model to fine-tune itself to capture patterns that are only present in the training data,
+		and not any independent data set.
+		
+		b. training size: if the training dataset is larger, then the error rate decreases slower, and the gap between the training and testing 
+		error rate is smaller because a 20% training set is more generalizible than a 10% set.
+		
+		c. model complexity: 
+		complex models tend not to generalize well for unseen testing instances 
+		a learning algorithm has to optimize accuracy through a combination of different dimensions.
+		if the dimensionality is high, it might create a spurious combination that satisfies the requirement by random chance,
+		which will cause performance issues for testing sets.
+		(~multiple comparrisons problems)
+			example:
+			Suppose we consider the efficacy of a drug in terms of the reduction of any one of a number of disease symptoms. 
+			As more symptoms are considered, it becomes increasingly likely that the drug will appear to be an improvement
+			over existing drugs in terms of at least one symptom.
+			
+			another example: the change that an analyst randomly identifies stock market performance 9/10 days is <1%.
+			however, the probability that one out of 200 analysts correctly does so is >88%. this is the problem with multiple 
+			comparrisons.
+			
+		tldr each combination of parameter values is an analyst, while each training point is a day for them to guess performance.
+		less days, more analysts -> more spurious combinations 
+		
+		DEMONSTATION: If we add 100 irrelevant attributes to a model, the testing error will drop significantly, but the test error will still be high.	
+	}
+	
+	3.5 Model Selection{
+		validation set: 
+		70-30 split for training and validation
+		if two models have the same error, pick the simpler one. 
+		gen.error(m)=train.error(m, D.train)+α×complexity(M) <- where the general error of model m is a function of the size of the training set 
+																and model complexity * alpha, a coefficient for balancing model complexity and error rates.
+																
+		**the more weight we give alpha, the more we rely on model complexity for general error calculation.
+		
+		Estimating decision tree complexity{
+			complexity = number of leaf nodes / number of instances in training set 
+			
+			PESSIMISTIC ERROR RATE:
+			errgen(T)=err(T)+Ω×k/Ntrain, where k = leaf nodes , Ntrain = num instances, err(T) = training error, and omega is a hyperparameter for trading off between 
+			complexity and error rates. 
+			
+			OPTIMISTIC ERROR RATE:
+			errgen(T) = err(T) 
+			
+			omega is the cost of adding a leaf node. 
+			
+			
+		}
+		
+		Minimum description length principle{
+			another way to include model complexity.
+			assume persons A and B are given a set of instances with attributes X.
+			A knows the labels for every instance. B does not. 
+			A wants to convey this data.
+			
+			A could send the labels for each instance OR 
+			send a classification model, and B can apply the model to determine 
+			the labels. 
+			
+			if the model is 100% accurate, the cost of transmission is 
+			the number of bits required to encode the model.
+			
+			otherwise, it is the cost of encoding plus data about which 
+			instances are misclassified.
+			
+			Cost(model,data) = cost(data|model) + alpha * cost(model)
+			where cost(data|model) = encoding for misclassified data 
+			cost(model) = cost of encoding model 
+			alpha = hyperparameter that trades off the relative costs of 
+			misclassified instances and the model. 
+		}
+		
+		Statistical Bounds { 
+			another way to correct the error training rate is to use 
+			a statistical correction that is indicative of its complexity. 
+			
+			the number of errors a leaf note commits has a normal distribution.
+			we can compute the ubber bound and use it for model selection.
+			
+			example: 
+			a left node in a training model splits into two child nodes. 
+			before splitting, the training error is 2/7 = 0.286.
+			
+			we use a normal binomial distribution to get the upper bound:
+			eupper(N,e,alpha) =
+			(e + (z^2(a/2))/2N + Z(a/2) * sqrt( (e(1-e)/N) + (Z^2(a/2)/4N^2))) / (1+ (Z^2(a/2)/N)) 
+		}
+		
+		Model Selection for Decision Trees { 
+			Prepruning (early stopping):
+				tldr stopping the tree from branching when the gain falls 
+				below a certain threshold. 
+				weakness: there are cases where no significant gain is made but subsequent splitting creates better subtrees.
+				these trees arent reached because tree construction is greedy.
+				
+			post-pruning:
+				decision tree fully blooms and gets trimmed bottom up 
+				OPTIONS: 
+				1. replace subtree with a new leaf node whose class is based on the majority class associated with the subtree (subtree replacement)
+				2. replace with the most frequently used branch of the subtree (subtree raising)
+				stops when there is no noticable change in generaliation error beyond a threshold.
+		
+				
+		}
+	}
+	
+	3.6 Model Evaluation { 
+		test and train set need to be completely independent.
+		
+		1. holdout method 
+		random partitioning into two sets (70-30 train/test) and then validate on the test data.
+		if train is too small our model might be improperly learned.
+		if test is too small our error test is less reliable. 
+		the value of err test varies by partition as well. 
+		
+		one solution is repeated holdout - do holdout over and over again and get a distribution of the error rate. 
+		
+		2. cross - validation 
+		ex: 3 fold cross validation 
+		div dataset into 3 containers - s1..s3 
+		1st run -> train s1+s2, test s3 
+		2nd run -> train s1+s3 test s2 
+		3rd run -> train s2+s3 test s1 
+		
+		get average error rate for all three si 
+		
+		k-validation creates k folds.
+		tradeoffs: a high value k results in larger training sets, which 
+		the bias in the estimate of the error rate.
+		small k - small test set, larger error rate 
+		
+		extreme case: K=N -> leave one out 
+		approach
+		
+		may be inaccurate, expensive 
+		
+		COMPLETE CROSS VALIDATION:
+		run k-fold cross validation for 
+		every possible partitioning of the data into k folds and 
+		obtaining a distribution of test error rates computed for every partition.
+		
+		this is a robust estimate of generalization error rate. 
+		but it is expensive,
+		so we just repeat cross validation a few times and use a different partition each time.
+		
+		stratified cross vvalidation:
+		perform a stratified sampling of positive and negative instances into k partitions 
+		to be more representative.
+	}
+	
+	3.7 Presence of hyperparameters{
+		def: hyperparameter = a parameter of a learning algorith that needs to be determined beforehand.
+		ex: Alpha for pessimistic error rate to account for complexity. 
+		
+		hyperparameter selection:
+		let p be a hyperparameter to be selected 
+		from a finite range of values {p1...pn}
+		
+		partition D.train into D.tr and D.val 
+		for every choice of pi, we learn a model mi 
+		on D.tr and validate it with D.val to get 
+		the validation error rate errval(pi).
+		
+		p* is the parameter that provides the lowest validation error rate.
+		m* is the model that corresponds to p* as 
+		the best classification model. 
+		
+		PSEUDOCODE:
+		Ntrain = size(D.train)
+		
+		k_paritions = D.train divided into k partitions 
+		(D.train i to Dtrain k)
+		
+		for i = 1 to k do 
+			D.val(i) = D.train(i) (partition for validation)
+			D.tr(i) = D.train/D.train(i) = partitions for training 
+			for each parameter pi in P do 
+				m = model-train(p,D.tr(i)) #train model 
+				err_sum(p,i) = model_test(m,D.val(i)) #sum f validation errors.
+			end for 
+		end for 
+		
+		errval(p) = errsum(p,i)/Ntrain #validation error rate 
+		p-star = min(errval(p)) #best hyperparameter val 
+		m-star = model-train(p-star, D.train) #final model learned on d-train 
+		return (p_star,m_star)
+		END PSEUDOCODE:
+		
+		Nested-cross-validation 
+		we still need a generalized performance error estimate 
+		for p_star and hyperparameters.
+		
+		solution: at every rain, interally cross-validate
+		each training set for model selection 
+		we select p*(i) and m*(i) and obtain the test error on the 
+		ith outer run, repeat this process, and get the average 
+		test error rate. 
+	}
+	
+	3.8 Pitfalls of model selection/evaluation{
+		a. overlap between training and test sets 
+		can create an inaccurately low value of error rate.
+		
+		b. use of validation error as generalization error:
+		the validation error serves as an out of sample error estimate 
+		for data not used to train the models.
+		
+		once the validation error has been used to select a classification model,
+		it no longer reflects the performance of m* on unseen instances.
+		
+		solution: generalize the error rate of m* by using 
+		an independently chosen test set that hasn't been used in 
+		any way to influence the selection of m*.this set should 
+		NEVER be examined during selection.
+	}
+	
+	3.9 model comparrison{
+		confidence interval ->
+		establish the probability distribution for sample accuracy. 
+		
+		formula: nCx * (p)^x * (1-p) ^ (1-x)
+		
+		given a test set with N instances, let X be the number of instances correctly identified and P 
+		the true accuracy of the model. if the prediction task is modeled as binomial experiement, 
+		X is binomial distributed with mean = np and variance = np(1-p)
+		X/N (the accuracy) is distributed with mean = p and variance = p(1-p)/N 
+		
+		the confidence interval for accuracy is then: 
+		{(-Z(a/2) <= accuracy - sqrt(p(1-p)/N )<= Z(1-a/2)) = 1-a 
+		
+		example:
+		model with accuracy of 80% evaluated on 100 test instances. 
+		confiendence interval at 95% would be:
+		Z(0.95/2) = 1.96 
+		
+		USE THE STATISTICAL BOUNDS FORMULA in upper_statistical_bound_calculation.r 
+		0.711 to 0.867
+		
+		Actual performance evaluation:
+		TLDR take the two error rates e1 and e2 and get a confidence interval for delta(e1,e2) and see if the CI spans 
+		zero. if it does, then the models aren't significantly different.'
+		
+	}
+	
+Chapter 4: 4.1, 4.2, 4.3, 4.4, & 4.5
+
+4.1 Alternative Classification Techniques / types of classifiers {
+	binary vs multiclass
+	binary: +1,-1 
+	multiclass: 1,0,-1 (married,single,divorced)
+	
+	deterministic vs probabilistic 
+	deterministic: discrete value label to each data point 
+	probabilistic: probability that an instance belongs to a given class out of N classes, sum(P(N))=1
+		example: Bayesian networks, logistic regression 
+	
+	Linear vs nonlinear
+	linear: linear separating hyperplane to discriminate instances from each other 
+		pro: less susceptible to overfitting 
+		can transform dataset into a more complex set before fitting linear classifier 
+		con: less flexible to fitting complex data 
+	nonlinear: complex, nonlinear decision surfaces 
+	
+	global vs local 
+	global: fits single model to entire data set 
+		problem: the relationship between the variables may vary over the input space 
+	local:
+		partitions the input space into smaller regions and fits a model to each region.
+		example: k-nearest neighbors 
+	problem: sensitive to outliers when n is small 
+
+	generative vs discriminative 
+		Classifiers that learn a generative model of every class in the process
+		of predicting class labels are known as generative classifiers.
+		ex: Bayesian network and naive bayes classifier 
+		
+		discriminative: predict class labels without trying to explore the distribution of each class 
+		great for when its not crucial to understand the properties of every class 
+		ex: decision tree, nearest neighbor classifier ,rule based classifier, support vector machines 
+}
+
+4.2 rule based classifiers{ 
+	def: eager learners - maps the input attributes to class label as 
+	soon as data becomes available 
+	ri: (condition) -> yi 
+	rule antecedent -> rule consequent 
+	
+	quality of a classification rule:
+		coverage: how many instances trigger the rule 
+		accuracy: how many of the instances classified by the rule as y are actually y 
+		
+		formulae: 
+			coverage = |A|/|D| where |A| is the number of rows that satisfy the antecedent  and |D| is the total number of rows 
+			accuracy = |A & Y|/|D| where |A&Y| is the number of rows that satirsfy the consequent AND antecedent of a rule.
+			
+	Rule set properties:
+		1. mutual exclusivity - no two rules apply to the same instance 
+		2. exhaustiveness - all possible attribute combinations are covered by the rule set 
+		
+		if a rule set is not exhaustive, a default classifier Yd must be added.
+		Yd has no antecedent, is an "else" statement. 
+		
+		3. Ordered list - the rule set is ordered by priority in decreasing order, known as a decision list 
+		rules can be prioritized by accuracy, business logic, etc. 
+		all instances are classified by the first rule in the list that triggers. 
+		(ie like an if else-if block) 
+		
+	Other ways to handle non exclusive rule sets 
+		1. the consequent of each rule triggered is a vote in favor of the class. pick the class with the most votes for it. 
+		2. weight the votes by their accuracy or coverage. 
+		3. 
+	
+	pros and cons of unordered rule sets 
+		1. less susceptible to classification errors 
+		2. less expensive maintenance 
+		3. more expensive bc have to look at every single rule for an instance. 
+		
+	DIRECT METHODS FOR RULE EXTRACTION (RIPPER){
+		tldr sequential covering with greedy rule extraction one class at a time,
+		ordering by the prevalence of a given class. 
+		
+		consider a set of classes Y =[y1..yc] where yc is the most prevalent class.
+		all instances in y1 are initially branded as positive, with all else labelled negative 
+		we then try to create a rule set to distinguish y1 from all other classes.
+		
+		then, y2 is labelled positive while y3-yc is labelled negative 
+		and we try to create a rule set to separate them 
+		
+		we do this until we have one class left, the default class (yc) 
+		
+	}
+	RIPPER USES THE LEARN ONE RULE FUNCTION: 
+		Learn one rule function{
+			grows rules in a greedy fashion 
+			starts with empty rule set r{} -> + 
+			we add rules to cover the positive class only.
+			initially inaccurate bc some instances are negative. refine 
+			up to a stopping criterion.
+			
+			example:
+			r: A-> +  
+			covers p0 positive examples and n0 negative examples 
+			r: A^B -> + 
+			covers p1 positive and n1 negative examples 
+			
+			FOIL information gain formula: 
+			p1 x (log2((p1)/(p1+n1)) - log2(p0/(p0+n0))) 
+			
+			RIPPER chooses the conjuct with the highest FOIL gain to extend the rule. 
+			SEE **FOIL_INFORMATION_GAIN_BETWEEN_TWO_RULES.R** for example 
+			tldr we keep choosing the best feature by information gain 
+			until we get no or negative gain. 
+			
+			OR we stop adding rules until the minimum description length 
+			principle is violated and the total length is increased by at least 
+			d bits or the error rate increasing beyond 50% 
+		}
+		
+		rule pruning{
+			prune based on performance with the validation set 
+			start with the last conjunct added 
+			if r = ABCD, start with D, then CD, BCD, etc. 
+		}
+	
+	Indirect methods for rule extraction{
+		-a rule set can be generated from a decision tree.
+		leaf nodes can be expressed as consequents, 
+		intermediate nodes are antecedents 
+	}
+	
+	characteristics of rule based classifiers {
+		1. rectilinear partitions of the attribute space and assign 
+		a class to each partition. a rule based classifier can 
+		trigger more than one rule, enabling complex models 
+		2. can handle various types of variables 
+		3. can handle redundant attributes with high correlation.
+		4. avoid selecting irrelevant attributes 
+		5. the class-based ordering addopted by RIPPER can handle 
+		imbalanced data distributions 
+		6. BAD at handling missing values 
+	}
+	
+4.3 Nearest Neighbor Classifiers{
+	def lazy learners - delay the modeling process until it is needed 
+	to classify instances. 
+	
+	def Rote classifier - memorized the entire training data 
+		performs classification a test instance only if it matches 
+		a training example exactly. 
+		con: some test instances just dont get classified 
+		
+	def nearest neighbors:
+		find training examples relatively similar to the attributes 
+		of the test intances 
+		tldr we take a testing set and find the k nearest neighbors 
+		in a d-dimensional space where d is the number of attributes 
+		
+		if the number of nearest neighbors is more than three, then we assign 
+		a class based on majority rule. 
+		
+	Concerns about choosing the right value of k: 
+		if k is too small we might have overfitting from the surrounding noise 
+		if k is too large then we might get the wrong class because were including neighbors that 
+		are too far away. 
+		
+		high-level algorithm:
+		compute the distance between all training points and a test instance on all dimensions d 
+		and return the top k instances. 
+		
+	properties of KNN
+		1. instance based learning - doesnt build a global model,
+		uses training examples to make predictions for a test instance. 
+		2. although no model building, can be computationally expensive 
+		because we need to calculate proximity values for all instances 
+		3. predictions based on local info - (ie building a model for 
+		each test instance). 
+		4. small values of K are susceptible to noise.
+		5. arbitrary boundary production
+		6. bad at handling missing values all around 
+		7. can handle interacting attributes (ie enhanced predictive power
+		when combined together than by themselves)
+		8. cannot handle irrelevant vars 
+		9. can make WRONG predictions unless the appropriate proximity measure 
+		and preprocessing is done (ie )
+	}
+	
+
+4.4 Naive Bayes Classifier{
+	-probabilistic model that gives a confidence for all class labels 
+	given that models are inherently uncertain. 
+	NBC is a generative model because it looks at the probabilities and 
+	the mechanism that generates attribute values.  
+	
+	recall join probability:
+	P(A and B) = P(A|B) * P(B)
+	
+	Bayes theorem:
+	P(Y|X) = P(X|Y)P(Y)/P(X)
+	
+	P(A=1) = 0.4
+	P(M=1|A=1) = 0.8
+	P(M=1|A=0) = 0.3
+	
+	Example:
+	P(A=1|M=1) = P(M=1|A=1) * P(A=1) / P(M=1)
+	P(M=1) = 0.8 * 0.4 + 0.3 * 0.6
+	0.64 
+	
+	Bayes theorem in classification:
+		posterior probability: probability of class label y given set of attribs x 
+		ie( p(y|x)  = p(x|y) * p(y) / p(x)
+		
+		p(x|y) = class conditional probability 
+		(likelihood of observing x from the training instances belonging to y)
+		
+		p(y) = prior probability 
+		captures prior beliefs about the distribution of class labels 
+		independent of the observed attribute values.
+		
+		P(x) = probably of evidence, does not depend on class label,
+		can be treated as a normalization constant 
+		
+	Naive bayes assumption{
+		class conditional probability of all attributes can be 
+		factored as a product of class conditional probabilities 
+		of all attributes xi:
+		
+		P(x|y) = sum(i) = sum(x|i|y)
+		attribute values xi are conditionally independent of each other 
+		given the class label y 
+	}
+	
+	Conditional Independence{
+		ex: Let X1, X2, and Y be three sets of random variables 
+		X1 is independent of X2 given Y if:
+		P(X1|X2,Y) = P(X1|Y)
+		
+		tldr if conditioned on Y, the distribution of X1 is not influenced 
+		by X2. 
+		
+		ex: arm length and reading skill might seem related 
+		but age is the confounding variable for both. 
+		if we fix age, arm length and reading skill dont have any relationship 
+		
+		P(X1,X2|Y) = P(X1,X2,Y)P(Y) = P(X1,X2,Y)*P(X2,Y)*P(X2,Y)*P(Y)
+	}
+		
+	How a classifier works{
+		1. estimate the conditional probability of each xi given Y separately 
+		if ni0 and nj0 are instances belonging to class 0 with 
+		X1 = ci and X2 = cj then the class conditional probability is:
+		
+		ni0n0 * nj0n0
+	}
+	
+	Properties:
+		1. generative learning model 
+		2. can handle missing values 
+		3. can handle noise 
+		4. can handle high dimensionality with class independence 
+		5. correlation can degrade performance bc the assumption doesnt hold 
+}
+
+Bayesian Network(4.7){
+	
+}	
+}
+
+Data Science using Python and R 
+Chapters 5,7,8
+
+Chapter5:Preparing to model the data{
+	
+	1. partitioning: 
+	data science does not use statistical inference when generalizing from a sample to a population 
+	because 
+		a) at a large enough scale we tend to get significance even when the results are useless 
+		b) we have no apriori hypotheses and explore actionable trends freely 
+		
+	2. dredging - the phenomenon of spurious correlations as a result of random chance.
+	offset through cross validation. 
+	
+	3. Validating Partition
+		for numerical variable: two sample t-test for difference in means 
+		for categorical with two classes: two-sample z-test for diff in proportions
+		for categorical with +2 classes: test for homogeneity of proportions 
+		
+	4. Balancing the training set 
+		purpose: provide classification algorithm with a rich selection 
+		of records for each category when a target variable class has a 
+		lower frequency. 
+		
+		ex: if n=100k and 1k transactions are fradulent, a model could be 99%
+		accurate by predicting "non-fradulent" for each instance, which 
+		is useless. 
+		
+		tldr we want MORE transactions. 
+		
+	5. balancing - resampling:
+		sample at random with replacement from our data set 
+		ex: increase fradulent records from 1% of n to 25%
+		
+		rare + x = p (records + x)
+		x = p(records) - rare / (1-p) 
+		where x is the required number of resample records 
+		p is the desired proportion of rare values 
+		records = unabalnced n 
+		rate = number of current rare values (ie fradulent)
+		
+		**NEVER BALANCE THE TEST SET.**
+	6. baseline model performance:
+		gives us something to compare performance against 
+		possibilities:
+		
+		a. all positive 
+		b. all negative 
+		
+		ie: our fraud model from #4 is 99% accurate. we need to beat that to 
+		be useful.
+		
+		c. baseline models for k-nary classification 
+		let there be k classes for the response variable C1..CK
+			biggest category model:
+			assign all predictions belong to the largest category. 
+		
+	7. baseline models for estimation
+		the y = y-bar model for regression is too low a bar, so 
+		we could ask a subject matter expert what a mediocre prediction error 
+		would be
+		
+		ex: Lending: estimate how much our mortgage clients can afford,
+		a mediocre SE would be 50k. anything less than 50k is good. 
+		anything better than 25k is the gold standard.
+}
+
+Chapter_7:Model_Evaluation(
+	validation tells us if our results across train/test data are consistent.
+	evaluation tells us our the error rate. 
+	
+	classification evaluation measures for binary targets:
+		contingency table/confusion matrix 
+		TAN = total actually negative = TN+FP
+		TAP = TP + FN 
+		TPN = total predicted negative = TN + FN 
+		TPP = TP+FP
+		
+		GT = TN + FN + FP + TP (grand total) 
+		
+		Accuracy = TN+TP/GT 
+		Error Rate = 1-Accuracy 
+		
+	sensitivity and specifity:
+		Sensitivity: TP/(TP+FN) -> ability to record positievly
+		Specificity: TN/(FP+TN) -> ability to record negatively 
+		
+		ideally, sensitivity = 1 and specificity = 1
+		
+		precision = tp/tpp = tp / tp + fp -> proportion of true positives, answers what selected items are relevant 
+		recall = specificity = TN/ TN + FP 
+		
+		F-beta-scores = ((1+beta^2) * (precision * recall))/ ((beta^2 * precision)+recall)
+		when beta = 1 -> harmonic mean, equally weighted precision and recall 
+		when beta > 1, recall weights more than precision 
+		when beta < 1, precision weighs more 
+		
+	method for model evaluation: 
+	
+		1. develop the model 
+		2. evaluate the model with the test set.
+	application of model evaluation:
+		ex data: clothing_data_driven_training + clothing_data_driven_test sets 
+		predict whether customers will respond to a marketing campaign based on:
+		days since purchase 
+		# of purchase visits
+		sales per visit 
+		
+		(See appendinx in this folder for details)
+		
+	Accounting for unequal error costs:
+		given the above scenario, the business motivation 
+		invalidates the assumption that the cost of all possible errors is equal.
+		we are intrinsically more interested in some types of errors.
+		
+		TN = correctly identified nonresponders. no mail. cost = 0
+		FP = incorrectly identified respondent. will be contacted, incurs cost = 10
+		FN = incorrect identified nonrespondent. will not be mailed. cost = 0
+		TP = correctly identified responder, will be contact, will buy something. cost = -40 
+	
+	We should then account for error costs.
+	Overall model cost = TN*Cost(tn) + FP*Cost(FP) + FN*Cost(FN) + TP*Cost(TP)
+	cost per record = overall model cost / total 
+	model profit per record = -model cost per record 
+	
+	Data Driven Error Costs:
+		recall that our nonzero costs were FP = 10 and TP = -40 
+		however, sales per visit provides an average amount of money 
+		per visit per customer. if we calculate the mean, we get ~113,
+		which means our new cost for TP = -113 
+		
+		(review this in the rmd module)
+)
+
+Chapter_8:Naive_Bayes_Classification{
+
+	Introduction to Naive Bayes, Bayes Theorem: 
+		consider a dataset made up of X = x1,x2 for a response variable Y 
+		where Y = {y1,y2,y3} 
+		
+		our objective is to identify which class of Y is the most likely 
+		for a combination of X which we can call X* 
+		
+	Calculation
+		get the posterior probability of each y in Y 
+		select the value of y with the highest posterior probability 
+		
+		p(Y= y* | X*) = P(X*|Y=y*) * p(Y=y*) / P(X*)
+		
+		let p(Y=y*) be the knowledge about how likely each class is before we 
+		begin analysis. this is the prior probability. This information is combined with 
+		P(X*|y*) which represents how the data behaves for the class y*.  
+		
+		P(X*) is how data behaves without reference to the response variable. 
+		
+	Maximum A Posteriori Hypothesis:
+		the maximum a posteriori hypothesis tells us to classify X* 
+		as the value of Y which ahs the highest posterior probability.
+		tldr pick the biggest probability out of all y in Y.
+		
+	Class Conditional Dependence:
+		for >1 predictor variable, the class conditional independence 
+		assumption allows us to write p(X*|y*) as the product of independent 
+		events. 
+		
+		ie 
+		P(X*|y*) = p(X1|y*) * p(X2|y*)
+		
+	Application of Naive Bayes Classification
+		ex: wine_flag_training and wine_flag_test as an appendix.
+		(see this directory for the example.)
+		
+	SEE PYTHON AND R APPENDICES FOR IMPLEMENTATION 
+}
+
+
+
+	

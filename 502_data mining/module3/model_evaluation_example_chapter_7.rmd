@@ -1,0 +1,180 @@
+---
+title: "Module 3 Applied Model Evaluation"
+author: "Data Science using Python & R"
+date: "3/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Desc:We will be working with the clothing_data_driven_training and clothing_data_
+driven_test data sets. The task is to predict whether or not customers will respond
+to a phone/mail marketing campaign, based on three continuous predictors:
+1. days since purchase 
+2. number of purchase visits
+3. sales per visit
+
+target variable: response (1=pos, 0=neg)
+
+```{r}
+#get datasets 
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module1/website data sets")
+train = read.table("clothing_data_driven_training",sep="\t",header = TRUE)
+test =  read.table("clothing_data_driven_test",sep="\t",header=TRUE)
+
+par(mfrow=c(2,1))
+#sanity check
+head(train)
+head(test)
+```
+we will be using a C5.0 model to create a decision tree for this instance.
+```{r}
+
+#install.packages("C50")
+#requires all terminal nodes to have at least 75 cases.
+library(C50)
+
+#factorize 
+train$Response = as.factor(train$Response)
+
+C5 <- C5.0(formula = Response ~ Days.since.Purchase + Sales.per.Visit + Number.of.Purchase.Visits,
+           data = train, 
+           control = C5.0Control(minCases=75)
+) 
+plot(C5)
+
+test.pred <- predict(object = C5, newdata = test)
+results <- data.frame(test.pred,test$Response)
+names(results) <- c("predicted","actual")
+head(results)
+```
+Next we calculate TP, TN, etc.
+
+```{r}
+
+tp = length(which(results$predicted==1 & results$actual==1))
+tn = length(which(results$predicted==0 & results$actual==0))
+fp = length(which(results$predicted==1 & results$actual==0))
+fn = length(which(results$predicted==0 & results$actual==1))
+
+```
+
+Given that these are in line with our textbook example, we can start calculating performance metrics for our binary classification.
+We begin by declaring our functions.
+
+```{r}
+
+accuracy <- function(tp,tn,fp,fn){
+  n = sum(tp,tn,fp,fn)
+  return(sum(tp,tn)/n)
+}
+sensitivity <- function(TP,FN){
+	return (TP/(TP+FN))
+}
+
+specificity <- function(FP,TN){
+	return (TN/(FP+TN))
+}
+
+precision <- function(TP,FP){
+	return (TP/(TP+FP))
+}
+
+recall <- function(TN,FP){
+	return (TN/(TN+FP))
+}
+
+```
+
+From here, we can calculate each one.
+```{r}
+accuracy(tp,tn,fp,fn)
+sensitivity(tp,fn)
+specificity(fp,tn)
+precision(tp,fp)
+recall(tn,fp)
+```
+Our accuracy is about 84%, and we can compare it to a baseline model of evaluating everything as negative to 
+see how well we performed.
+
+```{r}
+#baseline model calculation:
+baseline.accuracy <- (tn+fp) / nrow(results)
+baseline.accuracy
+```
+Our baseline accuracy is about 83%, which means the C5 classifier we constructed didn't do particularly well.
+Furthermore, we also recognize that error costs are not uniform. We find that TP incurs a cost of =-40,
+FP incurs a cost of 10, and TN/FN incurs no cost.
+
+We therefore adjust accordingly:
+```{r}
+cost.C5 <- matrix(c(0,4,1,0), byrow = TRUE, ncol=2)
+dimnames(cost.C5) <- list(c("0", "1"), c("0", "1"))
+
+
+C5.costs <- C5.0(Response ~ Days.since.Purchase +
+Number.of.Purchase.Visits + Sales.per.Visit, data =
+train, costs = cost.C5,control = C5.0Control(minCases=75))
+
+plot(C5.costs)
+
+```
+
+Next, we predict.
+
+```{r}
+costs.pred <- predict(object = C5.costs, newdata = test)
+results <- data.frame(costs.pred,test$Response)
+names(results) <- c("predicted","actual")
+head(results)
+```
+
+classification rate extraction:
+
+```{r}
+tp.cost = length(which(results$predicted==1 & results$actual==1))
+tn.cost = length(which(results$predicted==0 & results$actual==0))
+fp.cost = length(which(results$predicted==1 & results$actual==0))
+fn.cost = length(which(results$predicted==0 & results$actual==1))
+
+accuracy(tp.cost,tn.cost,fp.cost,fn.cost)
+sensitivity(tp.cost,fn.cost)
+specificity(fp.cost,tn.cost)
+precision(tp.cost,fp.cost)
+recall(tn.cost,fp.cost)
+
+```
+our cost function for errors can be adjusted further by looking at the average sales per visit and understanding that our average profit gained for the 
+true positive rate is actually 113.58. let's adjust our costs accordingly:
+
+```{r}
+cost.C5 <- matrix(c(0,11.358,1,0), byrow = TRUE, ncol=2)
+dimnames(cost.C5) <- list(c("0", "1"), c("0", "1"))
+
+
+C5.costs <- C5.0(Response ~ Days.since.Purchase +
+Number.of.Purchase.Visits + Sales.per.Visit, data =
+train, costs = cost.C5,control = C5.0Control(minCases=75))
+
+costs.pred <- predict(object = C5.costs, newdata = test)
+results <- data.frame(costs.pred,test$Response)
+names(results) <- c("predicted","actual")
+
+tp.cost = length(which(results$predicted==1 & results$actual==1))
+tn.cost = length(which(results$predicted==0 & results$actual==0))
+fp.cost = length(which(results$predicted==1 & results$actual==0))
+fn.cost = length(which(results$predicted==0 & results$actual==1))
+
+accuracy(tp.cost,tn.cost,fp.cost,fn.cost)
+sensitivity(tp.cost,fn.cost)
+specificity(fp.cost,tn.cost)
+precision(tp.cost,fp.cost)
+recall(tn.cost,fp.cost)
+
+```
+the models that made more positive predictions did better. Sensitivity is more important than specifity in this instance, so the model with the most recently adjusted costs (>100) did the best. Our best performing model had the highest sensitivity, which was model 3. 
+
+

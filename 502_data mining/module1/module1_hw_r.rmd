@@ -1,0 +1,121 @@
+---
+title: "Module 1 Homework"
+author: "Filipp Krasovsky"
+date: "3/8/2021"
+output:
+  pdf_document: default
+  pdf: default
+---
+
+Assignment:
+Data Science Using Python and R: Chapter 3 - Page 45: Questions #21, 22, 23, 24, & 25 
+Hint: Use both R and Python for these questions.
+Hint: Datasets for this assignment are available on the Weekly Python & R with Datasets page or you can download them here.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+For Exercises 21–25, work with the Nutrition_subset data set. The data set contains the
+weight in grams along with the amount of saturated fat and the amount of cholesterol for a
+set of 961 foods. Use either Python or R to solve each problem.
+
+
+
+<b>Question 21 - Ch.3</b>
+The elements in the data set are food items of various sizes, ranging from a teaspoon of
+cinnamon to an entire carrot cake.
+a. Sort the data set by the saturated fat (saturated_ fat) and produce a listing of the five
+food items highest in saturated fat.
+b. Comment on the validity of comparing
+
+```{r}
+#Chapter 3
+
+#read our nutritional data in 
+df = read.csv("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module1/Website Data Sets/nutrition_subset.csv")
+```
+
+```{r}
+#QUESTION 21 
+
+#a:sort by saturated fat 
+df.sorted_desc = df[order(df$saturated_fat,decreasing=TRUE),]
+
+#get top five food items 
+df.top_five = head(df.sorted_desc,n=5)
+
+#print our top five
+print(df.top_five)
+```
+
+b. the comparison of saturated fat is not meaningful because we are looking at different serving sizes, even across the same food group (ex: Parmesan Cheese).
+
+<b>Question 22 - Ch. 3 </b>
+Derive a new variable, saturated_ fat_per_gram, by dividing the amount of saturated fat
+by the weight in grams.
+a. Sort the data set by saturated_ fat_per_gram and produce a listing of the five food
+items highest in saturated fat per gram.
+b. Which food has the most saturated fat per gram?
+
+```{r}
+#create our new variable 
+df$saturated_fat_per_gram = df$saturated_fat/df$weight_in_grams
+#a. sort by saturated fat per gram 
+df.sorted_by_sfpg = df[order(df$saturated_fat_per_gram,decreasing=TRUE),]
+#b. get the food with the most saturated fat per gram 
+most_sfpg = subset(head(df.sorted_by_sfpg,n=1),select=c(food.item,saturated_fat_per_gram))
+
+print(most_sfpg)
+```
+<b> Question 23 - Ch. 3 </b>
+
+Derive a new variable, cholesterol_per_gram.
+a. Sort the data set by cholesterol_per_gram and produce a listing of the five food
+items highest in cholesterol fat per gram.
+b. Which food has the most cholesterol fat per gram?
+
+```{r}
+#create new variable 
+df$cholesterol_per_gram = df$cholesterol/df$weight_in_grams
+
+#sort dataset, produce top five, output food with the most cholesterol 
+df.sorted_chol = df[order(df$cholesterol_per_gram,decreasing=TRUE),]
+df.top_five_chol = subset(head(df.sorted_chol,n=5),select=c(food.item,cholesterol_per_gram))
+
+print(df.top_five_chol)
+
+```
+The food item with the most cholesterol per gram is Eggs.
+
+<b> Question 24 - ch.3 </b>
+
+Standardize the field saturated_fat_per_gram. Produce a listing of all the food items
+that are outliers at the high end of the scale. How many food items are outliers at the low
+end of the scale?
+
+```{r}
+#begin by looking at distribution
+d <- density(df$saturated_fat_per_gram) # returns the density data
+plot(d)
+```
+Our plot suggests that saturated_fat_per_gram does not follow a standard normal distribution, but rather a chi-square distribution of k~3. There are no outliers at the low end of the scale. Based on the proceeding chi-square test for outliers, we can conclude that we have at least one outlier on the high end. There are no outliers on the low end.
+```{r}
+require(outliers)
+chisq.out.test(df$saturated_fat_per_gram)
+
+#standardize 
+df$sfpg.std = scale(x = df$saturated_fat_per_gram)
+subset(df,abs(df$sfpg.std) >= 3)
+```
+Question 25 - ch. 3
+Standardize the field cholesterol_per_gram. Produce a listing of all the food items that
+are outliers at the high end of the scale.
+```{r}
+df$cpg_z <- scale(df$cholesterol_per_gram)
+subset(df,(df$cpg_z) >= 3)
+```
+
+

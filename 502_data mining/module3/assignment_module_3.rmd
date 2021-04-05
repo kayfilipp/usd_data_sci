@@ -1,0 +1,526 @@
+---
+title: "Module 3 Exercise Questions"
+author: "Filipp Krasovsky"
+date: "3/20/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#load relevant packaging 
+library(ROCR)
+```
+
+Introduction to Data Mining: Questions 16, 21
+
+16. You are asked to evaluate the performance of two classification models, M1 and M2.
+The test set you have chosen contains 26 binary attributes,
+labeled as A through Z. Table 4.13 shows the posterior probabilities
+obtained by applying the models to the test set. 
+
+a. Plot the ROC curve for both and . (You should plot them on the
+same graph.) Which model do you think is better? Explain your reasons.
+
+```{r}
+#load in our dataset and adjust corrupted column headers 
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module3")
+df = read.csv("question_16_data.csv")
+names(df)[1] = "models"
+#calculate ROC curves for each model 
+df.1 <- subset(df,df$models=="m1")
+pred <- prediction(df.1$predictions,df.1$labels)
+perf.1 <- performance(pred,"tpr","fpr")
+#..
+df.2 <- subset(df,df$model=="m2")
+pred <- prediction(df.2$predictions,df.2$labels)
+perf.2 <- performance(pred,"tpr","fpr")
+#co-plot in the same frame.
+par(mfrow=c(1,2))
+plot(perf.1,main="Model 1 ROC",col="blue",lwd=2)
+plot(perf.2,main="Model 2 ROC",col="green",lwd=2)
+```
+It's clear that model 1 outperforms model 2 because the area under the curve is significantly closer to 1 than model 2's curve,
+which seems to perform about as well as randomized guessing.
+
+b.For model M1, suppose you choose the cutoff threshold to be t=0.5. In
+other words, any test instances whose posterior probability is greater than
+t will be classified as a positive example. Compute the precision, recall,
+and F-measure for the model at this threshold value.
+
+```{r}
+#load in our dataset and adjust corrupted column headers 
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module3")
+df = read.csv("question_16_data.csv")
+names(df)[1] = "models"
+#fetch model 1
+df.1 <- subset(df.1,df$model=="m1")
+
+#determine if classed as positive based on t
+df.1$positive = df.1$predictions > 0.5 
+
+#get TP,FP,FN,TN 
+TP = nrow(subset(df.1,labels=="+" & positive==TRUE))
+FP = nrow(subset(df.1,labels=="-" & positive==TRUE))
+FN = nrow(subset(df.1,labels=="+" & positive==FALSE))
+
+#define formulas for precision, recall, and the F-measure 
+precision <- function(TP,FP){
+  return (TP/(TP+FP))
+}
+
+recall <- function(TP,FN){
+  return (TP/(TP+FN))
+}
+f_measure <- function(precision,recall){
+  return ( 2 * (precision*recall)/(precision+recall))
+}
+
+df.precision = precision(TP,FP)
+df.recall    = recall(TP,FN)
+df.fmeasure  = f_measure(df.precision,df.recall)
+
+print(df.precision)
+print(df.recall)
+print(df.fmeasure)
+```
+Question 21:
+Given the data sets shown in Figures 4.59 , explain how the decision
+tree, naïve Bayes, and k-nearest neighbor classifiers would perform on these
+data sets.
+
+  Dataset 1: KNN would perform poorly given the amount of noise, especially at smaller values of K. 
+  Decision tree. Our decision tree would likely do fine in the face of noise and irrelevant or even redundant attributes.
+  Our naive Bayes might have performance degradation - the noise in the dataset is significant enough where it won't be 
+  averaged out during the modeling process. Another consideration might be that the distinguishing attributes take on a 
+  linear relationship and inhibit performance as well.
+  
+  Dataset 2: Our decision tree would suffer given that there's less of a clear split boundary for the distinguishing attributes because of all the noise included
+  inside of them. Our KNN classifier would do better for this data due to the fact that there's less noise/irrelevant attributes. Finally, our Bayes classifier would 
+  do very poorly due to the attribute dependence.
+  
+  Dataset 3: Bayes will perform well due to the clear-cut class-conditional dependence for each attribute. KNN will perform without major inhibitors.
+  A decision tree might falter due to the large number of attributes.
+  
+  Dataset 4: KNN will do well because of the clear boundaries for each class along the x and y attributes. Decision trees will work without any major roadblocks.
+  Bayes will not work because of the attribute dependence.
+  
+  Dataset 5: KNN will perform well due to the clear boundary split. Decision trees will work but may have a large number of nodes. Bayes may not do well due to attribute      dependence.
+  
+  Dataset 6: KNN will work well, decision trees will need a high node count to navigate the decision boundaries. Bayes may underperform due to attribute dependence.
+
+
+Data Science Using Python and R: Chapter 5 - Page 78: 
+Questions #28, 29, 30, 31, 32, 33, & 34
+We will be using the churn data set for these exercises. 
+
+```{r message=FALSE, warning=FALSE}
+#read in our churn dataset
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module1/Website Data Sets")
+df = read.csv("churn")
+#sanity check
+head(df)
+```
+Question 28: Partition the data set, so that 67% of the records are included in the training data set and
+33% are included in the test data set. Use a bar graph to confirm your proportions.
+```{r}
+n <- dim(df)[1]
+train_ind <- runif(n) < 0.67
+df_train <- df[train_ind,]
+df_test  <- df[!train_ind,]
+
+df_train$cat = "train"
+df_test$cat  = "test"
+
+df_new <- rbind(df_train, df_test)
+
+library(ggplot2)
+ggplot(df_new, aes(cat)) + geom_bar() 
+```
+The bar graphs validate our partition.
+
+Question 29
+
+Identify the total number of records in the training data set and how many records in the
+training data set have a churn value of true.
+
+We can do this by constructing a contingency table:
+```{r}
+		#the addmargins function creates a row and column to table A=t.v1 called "total" which contains the sum of the rows and columns 
+		t.v1 <- table(df_train$Churn)
+		t.v2 <- addmargins(A = t.v1, FUN = list(total = sum),quiet = TRUE)	
+		#print with percentages and without
+		print(t.v2)
+```
+Question 30 
+
+Use your answers from the previous exercise to calculate how many true churn records
+you need to resample in order to have 20% of the rebalanced data set have true churn
+values.
+
+```{r}
+#formula
+resample_size <- function(n,p,rare){
+  return (((p*n)-rare)/(1-p))
+}
+
+resample_size(nrow(df_train),0.20,338)
+```
+We need 148 resampled instances to have a 20% churn=true proportion.
+
+Question 31 
+
+Perform the rebalancing described in the previous exercise and confirm that 20% of the
+records in the rebalanced data set have true churn values.
+
+```{r}
+to.resample<- which(df_train$Churn =="True") #get row numbers that correspond to cond 
+our.resample<- sample(x=to.resample, size=148, replace=TRUE)
+
+our.resample <- df_train[our.resample,]
+df_train_rebal <- rbind(df_train,our.resample)
+
+#confirm:
+t.v1 <- table(df_train_rebal$Churn)
+t.v2 <- rbind(t.v1, round(prop.table(t.v1), 4))
+colnames(t.v2) <- c("Churn = False", "Churn = True");
+rownames(t.v2) <- c("Count", "Proportion")
+t.v2
+```
+32. Which baseline model do we use to compare our classification model performance
+against? To which value does this baseline model assign all predictions? What is the
+accuracy of this baseline model?
+
+We use the all negative (ie Churn = false) model as our baseline. This model assigns all predictions to the 
+value "no" for churn. Our accuracy depends on whether or not our dataset is rebalanced - if it is, then 
+we have 80% accuracy. Otherwise, our baseline model is 85% accurate.
+
+33. Validate your partition by testing for the difference in mean day minutes for the training
+set versus the test set.
+
+```{r}
+t.test(x = df_train$Day.Mins,y = df_test$Day.Mins)
+```
+At an alpha of 0.05, we do not have enough evidence to reject the null hypothesis that the two datasets are systematically different on the axis of day minutes.
+
+34. Validate your partition by testing for the difference in proportion of true churn records
+for the training set versus the test set.
+
+```{r}
+train_x = nrow(subset(df_train,Churn=="True"))
+test_x  = nrow(subset(df_test,Churn =="True"))
+prop.test(x=c(train_x,test_x), n=c(nrow(df_train), nrow(df_test)),conf.level=0.95)
+```
+We do not have enough evidence to reject the null hypothesis that our datasets are systematically different.
+
+
+Chapter 7 - Page 109: Questions #23, 24, 25, 26, 27, 28, 29, & 30
+For the following exercises, work with the adult_ch6_training and adult_ch6_test data sets.
+
+```{r message=FALSE, warning=FALSE}
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module1/Website Data Sets")
+
+train = read.csv("adult_ch6_training")
+test =  read.csv("adult_ch6_test")
+
+#factorize
+train$Marital.status = factor(train$Marital.status)
+#test$Marital.status = factor(test$Marital.status)
+train$Income = factor(train$Income)
+#test$Income = factor(test$Income)
+head(train)
+```
+
+Question 23
+Using the training data set, create a C5.0 model (Model 1) to predict a customer’s Income
+using Marital Status and Capital Gains and Losses. Obtain the predicted responses.
+
+```{r}
+library(C50)
+#run our model and then point it at our test data
+C5 <- C5.0(formula = Income ~ Marital.status + Cap_Gains_Losses, data = train, control = C5.0Control(minCases=75))
+predict <- (predict.C5.0(C5,newdata=test))
+```
+Question 24
+Evaluate Model 1 using the test data set. Construct a contingency table to compare the
+actual and predicted values of Income.
+
+```{r}
+#since we already did that step in #23, we can move ahead with our table:
+results <- data.frame(predict,test$Income)
+names(results) = c("predicted","actual")
+table(results$predicted,results$actual)
+```
+Interpretation: of the observed values of Income <=50k, 4632 were correctly classified.
+Of the observed values of Income >50k, 376 were correctly classified.
+
+Question 25 
+For Model 1, recapitulate Table 7.4 from the text, calculating all of the model evaluation
+measures shown in the table. Call this table the Model Evaluation Table. Leave space
+for Model 2.
+
+For ease, we will target income >50k as 1, and <=50k as zero.
+
+```{r}
+results$predicted = ifelse(results$predicted==">50K",1,0)
+results$actual    = ifelse(results$actual==">50K",1,0)
+
+tp = length(which(results$predicted==1 & results$actual==1))
+tn = length(which(results$predicted==0 & results$actual==0))
+fp = length(which(results$predicted==1 & results$actual==0))
+fn = length(which(results$predicted==0 & results$actual==1))
+
+accuracy <- function(tp,tn,fp,fn){
+  n = sum(tp,tn,fp,fn)
+  return(sum(tp,tn)/n)
+}
+sensitivity <- function(TP,FN){
+	return (TP/(TP+FN))
+}
+
+specificity <- function(FP,TN){
+	return (TN/(FP+TN))
+}
+
+precision <- function(TP,FP){
+	return (TP/(TP+FP))
+}
+
+recall <- function(TN,FP){
+	return (TN/(TN+FP))
+}
+
+error_rate <- function(accuracy){
+  return (1-accuracy)
+}
+
+f_1 <- function(precision,recall){
+  numerator = precision * recall 
+  denominator = precision + recall 
+  return ( 2 * numerator/denominator)
+}
+
+f_2 <- function(precision,recall){
+  numerator = precision * recall 
+  denominator = precision + recall 
+  return ( 5* (numerator/denominator))
+}
+
+f_0.5 <- function(precision,recall){
+  numerator = precision * recall 
+  denominator = precision + recall 
+  return ( 1.25 * numerator/denominator)
+}
+
+a = accuracy(tp,tn,fp,fn)
+se=sensitivity(tp,fn)
+sp=specificity(fp,tn)
+p = precision(tp,fp)
+r = recall(tn,fp)
+er=error_rate(a)
+fone = f_1(p,r)
+ftwo = f_2(p,r)
+fhalf= f_0.5(p,r)
+
+paste("accuracy",a)
+paste("sensitivity",se)
+paste("specificity",sp)
+paste("precision",p)
+paste("recall",r)
+paste("err. rate",er)
+paste("F1",fone)
+paste("F2",ftwo)
+paste("F0.5",fhalf)
+
+
+```
+Question 26: 
+Clearly and completely interpret each of the Model 1 evaluation measures from the Model Evaluation Table.
+
+Accuracy: Ability to correctly identify classes as a fraction of the total 
+number of classifications.
+Our model was 81% accurate.
+
+Sensitivity: Ability to identify records as positive. Our sensitivity is low,
+so we do not do a good job of identifying "positive instances", or cases of high income individuals.
+
+Specificity: Ability to identify records as negative. Our specificity was 
+high, so we can identify low income individuals well.
+
+Precision: the proportion of true positives to false positives,
+answers which selected items are relevant. our precision 
+was fairly high, which means most identified high income individuals were
+correctly picked.
+
+error rate: how inaccurate our model was at identifying either income 
+class correctly. our error rate is fairly high.
+
+F1,2,0.5: haromic weights of precision and recall.
+F1 weighs these equally, F2 weights recall more,
+and F0.5 weighs precision more. 
+
+Our model does relatively well when we weigh precision and recall equally,
+incredibly well when we weigh recall more than precision (ie, when we care more about low income identification),
+and very poorly when we give more weight to high income identification.
+
+Question 27:
+Create a cost matrix, called the 3x cost matrix, that specifies a false positive is four times
+as bad as a false negative.
+
+```{r}
+#y-real, x-predicted
+cost.C5 <- matrix(c(0,4,1,0), byrow = TRUE, ncol=2)
+dimnames(cost.C5) <- list(c("0", "1"), c("0", "1"))
+cost.C5 
+```
+Question 28. Using the training data set, build a C5.0 model (Model 2) to predict a customer’s Income using Marital Status and Capital Gains and Losses, using the 3x cost matrix.
+
+Foreword: we will need to manipulate income into a binary variable for ease of calculation.
+let 1 = high income.
+```{r message=FALSE, warning=FALSE}
+#apparently C5 crashes when nonstandard chars are involved, so here I go renaming everything 
+
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module1/Website Data Sets")
+
+train = read.csv("adult_ch6_training")
+test =  read.csv("adult_ch6_test")
+
+#factorize and redefine as 1,0 to fit our matrix
+train$Marital.status = factor(train$Marital.status)
+train$Income = factor(train$Income)
+train$Income = ifelse(train$Income==">50K",1,0)
+
+#factorize our test response variable to make it comparable during metric calculation 
+test$Income = factor(test$Income)
+test$Income = ifelse(test$Income==">50K",1,0)
+
+names(train) = c("MaritalStatus","Income","CapGainsLosses")
+names(test) = c("MaritalStatus","Income","CapGainsLosses")
+train$Income = as.factor(train$Income)
+train$MaritalStatus = as.factor(train$MaritalStatus)
+C5.costs <- C5.0(Income ~ MaritalStatus + CapGainsLosses, data = train,cost=cost.C5,control = C5.0Control(minCases=75))
+
+costs.pred <- predict(object = C5.costs, newdata = test)
+results <- data.frame(costs.pred,test$Income)
+names(results) <- c("predicted","actual")
+```
+
+
+
+Question 29. Evaluate your predictions from Model 2 using the actual response values from the test data set. Add Overall Model Cost and Profit per Customer to the Model Evaluation Table. Calculate all the measures from the Model Evaluation Table.
+
+```{r}
+#we already calculated the formulae for our performance metrics, so we can just recalculated tp,fp,tn,etc.
+tp = length(which(results$predicted==1 & results$actual==1))
+tn = length(which(results$predicted==0 & results$actual==0))
+fp = length(which(results$predicted==1 & results$actual==0))
+fn = length(which(results$predicted==0 & results$actual==1))
+
+a = accuracy(tp,tn,fp,fn)
+se=sensitivity(tp,fn)
+sp=specificity(fp,tn)
+p = precision(tp,fp)
+r = recall(tn,fp)
+er=error_rate(a)
+fone = f_1(p,r)
+ftwo = f_2(p,r)
+fhalf= f_0.5(p,r)
+
+paste("accuracy",a)
+paste("sensitivity",se)
+paste("specificity",sp)
+paste("precision",p)
+paste("recall",r)
+paste("err. rate",er)
+paste("F1",fone)
+paste("F2",ftwo)
+paste("F0.5",fhalf)
+
+#overall model cost 
+# TN*Cost(tn) + FP*Cost(FP) + FN*Cost(FN) + TP*Cost(TP)
+overall_cost = (tn*0)+(fp*4)+(fn*1)+(tp*0)
+
+#overall profit per customer
+#-(overall_cost)/total 
+profit_per_customer = -1 * overall_cost / nrow(test)
+
+paste("overall_cost",overall_cost)
+paste("profit per customer",profit_per_customer)
+
+```
+
+
+Question 30. Compare the evaluation measures from Model 1 and Model 2 using the 3x cost matrix. Discuss the strengths and weaknesses of each model.
+
+M1 outperforms on accuracy, specificity, precision, error rate, and all three harmonic means.
+M2 outperforms on sensitivity. 
+In this instance, the ability to avoid false positives is paramount due to our error costs (ie income>50k).
+Therefore, precision is key. M1 is the better model.
+
+Chapter 8 - Page 126: Questions #31, 32, 33, & 34
+For the following exercises, work with the framingham_nb_training and framingham_nb_test data sets. 
+Use either Python or R to solve each problem.
+
+```{r message=FALSE, warning=FALSE}
+#extract, sanity check
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module1/Website Data Sets")
+
+train = read.csv("framingham_nb_training.csv")
+test =  read.csv("framingham_nb_test.csv")
+
+head(train)
+head(test)
+library(gridExtra)
+library(e1071)
+```
+
+31. Run the Naïve Bayes classifier to classify persons as living or dead based on sex and
+education.
+
+```{r}
+nb01 <- naiveBayes(formula = Death ~ Sex + Educ,data=train)
+nb01
+```
+
+32.
+
+Evaluate the Naïve Bayes model on the framingham_nb_test data set. Display the results in a contingency table. Edit the row and column names of the table to make the table more readable. Include a total row and column.
+
+```{r}
+ypred <- predict(object = nb01, newdata =test)
+results <- data.frame(ypred,test$Death)
+names(results)<-c("predicted","actual")
+
+		t.v1 <- table(results$predicted, results$actual,dnn = )
+		t.v2 <- addmargins(A = t.v1, FUN = list(total = sum),quiet = TRUE)
+		print(t.v2)
+```
+
+33.According to your table in the previous exercise, find the following values for the Naïve
+Bayes model:
+a. Accuracy
+b. Error rate
+
+```{r}
+tp = length(which(results$predicted==1 & results$actual==1))
+tn = length(which(results$predicted==0 & results$actual==0))
+fp = length(which(results$predicted==1 & results$actual==0))
+fn = length(which(results$predicted==0 & results$actual==1))
+
+a=accuracy(tp,tn,fp,fn)
+a
+(1-a)
+```
+
+
+34.According to your contingency table, find the following values for the Naïve Bayes model:
+a. How often it correctly classifies dead persons.
+b. How often it correctly classifies living persons.
+
+```{r}
+	#a.
+  tp/nrow(results)
+  #b.
+  tn/nrow(results)
+```
+
+

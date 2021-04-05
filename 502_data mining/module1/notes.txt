@@ -1,0 +1,202 @@
+Module 1:
+
+Introduction to Data Mining - chapters 1,2
+Data Science using Python and R - chapters 1,2,3,12
+
+Introduction to Data Mining 
+Chapter 1 p38
+
+things that are not data mining:
+	anything that can be done by interacting simply with a UI or DB management system 
+
+Input data --> Preprocessing --> Data Mining --> Post-processing --> Insight 
+				feature selection					filtering
+				dimension reduction					visualization
+				normalization						pattern interp
+				etc		
+_________________________________________________________________________________
+
+challenges:
+	scalability
+	high dimensionality
+	complex data 
+	data ownership
+	
+tasks:
+	predictive
+	descriptive
+	
+Anomaly detection - finding observations whose characteristics differ significantly from the rest of the data 
+Association analysis - find patterns that describe strongly associated features in the data (ex identifying web pages that are accessed together)
+
+Chapter 2 p72 
+
+def attribute -> basically any characteristic of an object that can vary 
+def measurement scale-> is a function that associates the attribute of an object with numerical values or symbolic values 
+	(ie telling someones gender, measuring weight, counting stars)
+	
+types of measurement scales  (examples)
+
+	employee age and id number -> integers 
+	
+types of attributes 
+
+	distinctness
+	order
+	addition
+	multiplication
+	OR
+	nominal, ordinal, interval, ratio 
+	
+permissible transformatins by var type 
+
+	nominal 
+		any 1:1 mapping (if all employee IDs are assigned, there's no difference)
+	ordinal 
+		an order-preserving, monotonic function f, f(old_val)= new_val
+	interval
+		new_val = a*old_val + b , a/b are constants (F* and C* differ in their zero point and unit size)
+	ratio 
+		new_val = old_val * a (length can be measure in meters or feet)
+		
+Describing attributes by number of values 
+
+	discrete = countably infinite 
+	binary = y/n 
+	continuous ->[Real numbers], only countable with finite precision 
+
+Assymetric Atributes 
+
+	a type of attribute where the presence of a value is more important than its absence 
+	ex: if taking a course = 1 and not taking it = 0 , most students would be similar if classified by the number of 0.
+	Instead, it's more meaningful to look at the number of 1's.
+	
+	this is a *binary assymetric atribute*.
+	
+Attributes of data sets 
+
+	1. dimensionality (how many columns)
+	curse of dimensionality: when it gets so big that its fucked 
+	2. distribution 
+	sparsity - when most values in a skewed distribution converge towards zero (binary, continuous, etc)
+	making analysis a little easier because only nonzero values have to be manipulated.
+	3. resolution/granularity - tldr if data is too granular you might lose out on trends that are obscured by noise. 
+	
+	4. record data 
+	data mining assumes we have a flat file or RDB with a collection of records, each of which has a fixed set of data points 
+	
+	5. transaction data 
+	each record involves a set of items 
+	it is a set of records whose fields are assymetric attributes, and we care more about what's in a shopping list than what's not in it 
+	
+	6. matrix data - basically a record table but can have matrix ops applied to it.
+
+	7. sparse data matrix - a special case where the data attributes are all of the same type and assymetric 
+
+	temportal and spatial correlation - points that occur next to each other in time or in space tend to exhibit similar properties.
+	
+	measurement error - problems resulting from data measurement 
+
+	data collection error - omitted fields or unnecesarry object inclusion 
+
+
+	PRECISION V BIAS:
+	precision - the closeness of repeated measurements of the same thing -> std dev
+	bias - a systematic variation AWAY from the quantity being measured  -> sample mean - real value 
+
+	accuracy -> f(precision,bias)
+
+DATA PREPROCESSING
+	aggregate, sample, reduce, feature subset selection,feature creation, discretization and binarization, variable transformation
+
+progressive sampling - constantly increase n until we get to a sufficient size. kind of hard to tell when n becomes too big though.
+dimension reduction - combine dimensions into one or discard them
+
+LINEAR ALGEBRA TECHNIQUES
+
+PCA(Principal component analysis) - a linear algebra technique for
+continuous attributes that finds new attributes (principal components) that (1)
+are linear combinations of the original attributes, (2) are orthogonal
+(perpendicular) to each other, and (3) capture the maximum amount of
+variation in the data.
+
+FEATURE SUBSETTING
+
+tldr remove columns or automatically find an otpimal combination
+feature weighing can also happen either through domain expertise or through computation where features are given less weight based on importance 
+
+feature extraction - when new features are created from old ones 
+
+ 
+
+
+
+
+
+DATA SCIENCE USING PYTHON AND R
+(CH 1-3,12)
+
+Chapter 1 (p17)
+
+methodology:
+	1 problem understnading 
+	2 data preparation phase (binning numerical vars, dealing with outliers, indexing, transforming and standardizing data)
+	3 EDA - exploring relationships between target and predictor variables, between predictor varibles, binning based on predictive value, etc 
+	4 setup phase
+		a. cross validation (tldr split the data into sample and test a bunch and average the performance errors)
+		b. balancing data
+		c. establishing baseline performance (ie >99% accuracy)
+	5 modeling
+	6 evaluation 
+	7 deployment 
+
+common data science tasks
+	description, estimation, classification, clustering, prediction,association 
+
+
+
+QUIZ 
+1. A
+2. FALSE
+3. TRUE 
+4. TRUE
+5. TRUE
+6. TRUE
+7. NO
+8. YES
+9. (NO IS CORRECT)
+10. NO
+11. NO 
+12. NO
+14 continuous qualitiative nominal 
+15 discrete, qualitative, nominal
+16 ratio, continuous, quantitative 
+17 discrete, ordinal, qualitative 
+18 a e d b c
+19 false 
+20 true
+21 b 
+22 true 
+23 false 
+24 
+26 d
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,730 @@
+Tan, P. N., Steinbach, M., Karpatne, A., & Kumar, V. (2019). Introduction to Data Mining (2nd ed.). Pearson
+Chapter 4: 4.6, 4.7, 4.8, 4.9, 4.10, 4.11, & 4.12
+	
+Larose, C., & Larose, D. (2019). Data Science Using Python and R. John Wiley & Sons, Inc.
+Chapter 9
+Chapter 13
+
+
+Chapter 4{
+
+	def objective function{
+		tldr how we measure the quality of a solution to an optimization problem 
+	}
+
+	4.6(logistic regression){
+		logistic regression is a discriminative model-
+		it assigns class without computing class conditional probability
+		
+		uses a linear predictor, z = wTx + b
+		to give us the odds of a given class x as:
+		
+		p(y=1|X)*p(y=0|x) = ez = ewTx+b
+		
+		w,b = params 
+		aT = transpose of vector a 
+		
+		logistic regression uses the signmoid function, which generates 
+		an output [0,1]
+		
+		def: generalized linear model 
+			target variable generated from a probability distribution p(y|x)
+			whose mean can be estimated using a link function 
+			(wTx + b)
+			
+		logit function = g(mean) = log(u1 -u)
+		
+		learning model parameters{
+			w,b are estimated with max likelihood estimation 
+			for a trianing set, we can computer the posterior prob. of yi 
+			given x, w, and b with 
+			sigmoid(yi) * (1-sigmoid(yi))*(1-yi)
+			
+			since computation becomes unstably when n is large,
+			we use the cross entropy function, which measures the likelihood 
+			n is generated from the logistic regression model with w,b 
+			
+			we want minimum entropy.
+		}
+		
+		characteristics of logistic regession{
+			1. generic, no assumptions about class probability 
+			2. the learned parameters can be analyzed to understand 
+			the relationship between attributes/classes 
+			3. linear boundaries only 
+			4. works robustly in high dimensional settings compared to distance
+			based classifiers.
+			5. no way to provide a tradeoff between complexity 
+			and performance.
+			6. can handle irrelevant attributes and interacting attributes 
+			7. cannot handle missing values.
+		}
+		
+	}
+	
+	4.7(Artificial Neural Networks){
+		overview of neural activity:
+		neurons are never cells linked together by axons.
+		when a neuron fires, it transmits activations to other neurs.
+		receptor neurons collect these in dendrites. the strength 
+		between a dendrite and an axon is the synapse.
+		
+		the human brain adjusts synapses based on repeated stimulation
+		through the same impulse.
+		
+		Analog{
+			ANN consists of nodes connected via links.
+			nodes do basic computations, links connect nodes 
+			the objective of ANN is to adapt the weights of the links 
+			until they fit the IO relationship of the data.
+		}
+		
+		ANN is able to extract more features composed of simpler features
+		ex: facial recognition abstracts simple features like 
+		sharp edges with different gradients and combine them into 
+		facial parts like eyes and lips.
+		
+		Perceptron{
+			a type of ANN model that involves input and output nodes.
+			each input node is connected to the perceptron with weighted 
+			links to emulate the synaptic strength.
+			
+			the output node is a device that computes a weighted sum of its inputs 
+			and adds a bias factor.
+			
+			perceptrons make linear decision boundaries. there are many boundaries 
+			between classes, and the perceptron arbitrarily learns one of them.
+			
+			!!! perceptron only converges when the classes are linearly separable.
+		}
+		
+		Learning the perceptron{
+			we want to maximize learning parameters w~ such that y closely resembles the true 
+			y of training instances, we do this with a learning algorithm.
+			
+			one important step is the **iterative weight update**
+			which adjusts the weight for an input link after every iteration,
+			contains a parameter known as the learning rate.
+		}
+		
+		Multi-Layer-Network{
+			an MLN generalizes a perceptron to more complex nonlinear decision boundaries 
+			MLNs have layers that operate on the output of the previous layer,
+			creating levels of abstraction 
+			
+			def: Input layer{
+				each attribute is represented with a single node, categoricals represented w/ dummies 
+			}
+			def: Hidden Layer {
+				processed by hidden nodes, every node produces an activation value 
+				that goes to the next layer 
+			}
+			def: output layer {
+				processes activation values from previous layer to produce predictions 
+				for binary classification, output is a single node with a class label.
+			}
+			def: feedforward neural network{
+				the signals only propagate in the forward direction from in to out 
+			}
+		}
+		
+		diff(perceptrons,multi layer){
+			hidden layers allow arbitrarily complex decision boundaries by 
+			constructing hyperplanes in other dimensions. 
+			
+			features combined at hidden layers in exponential ways.
+			decision trees can learn partitions in the attribute space 
+			but cannot combine them complexly. 
+		}
+		
+		activation functions{
+			decide whether a neuron should be activated by calculating 
+			weighted sum and adding bias 
+			examples: sigmoid, reLu, leaky ReLu, linear, sign function  
+		}
+		
+		learning model params{
+			weights and bias are learned during the ANN training 
+			this is achieved with a loss function 
+			
+			we want w*,b* such that we get minimal loss 
+			we apply gradient descent to get a locally optimal solution 
+			
+			backpropagation propagates the rate of change of the error E 
+			back to hidden layers 
+		}
+		
+		traits of ANN{
+			1. universal approximator - can approximate any target function 
+			very expressive and have complex decision boundaries 
+			2. usable for multiclass and regression issues 
+			3. susceptible to overfitting due to complexity 
+			4. provides many lvls of abstraction. output is the highest level,
+			most useful for classification 
+			5. high level features can be composed of simpler low level features 
+			that are easy to learn. allows gradual complexity increase.
+			6. can handle irrelevant attributes
+			7. solutions obtained by gradient descent are not guaranteed to be 
+			globally optimal. ANN gets stuck in local minimas.
+			8. takes a long time to train 
+			9. handles interacting variables.
+			10. cannot handle NAs 
+		}
+	}
+	
+	4.8 (Deep Learning){
+		def deep neural networks - models with long chains of hidden layers 
+		which can represent multiple lvls of abstraction with fewer nodes 
+		for similar performance to ANN / shallow networks 
+		
+		def gradient descent: picking an initial solution and then
+		computing the change to the solution that best optimizes the 
+		objective function and updating the solution 
+		
+		problems with ANN:
+			slow convergence of gradient descent due to saturation of sigmoid 
+			functions 
+			
+			compounding of saturation is a problem - > vanishing gradient problem 
+			slow learning, poor performance. 
+			sensitive to initial values of model params because of the 
+			non convex nature of optimization functions that get stuck at local 
+			minimas.
+			problems with overfitting due to complexity 
+			
+		Synergetic loss functions{
+			classical ANN paired sigmoid activation with squared loss error 
+			to perform gradient descent, which leads to saturation 
+			
+			saturation of outputs { 
+				sigmoids compress the neural response between 
+				0 and 1, display limiting behavior at boundaries. 
+				to reach these boundaries, weights take on large balues.
+				
+				the gradient of the output becomes small and stunts performance.
+			}
+			
+			cross entropy loss function{
+				measures disagreement between y and y^
+				promotes effective learning at output mode 
+				whenever the gap is large, less prone to saturation.
+			}
+			
+			responseive action functions{
+				TLDR the sigmoid function makes performance suck so we get 
+				the vanishing gradient problem and cant do gradient descent 
+				alts:
+					Rectified linear units(RELU)=> only activates if val >0 
+					
+			}
+			
+			regularization{
+				tldr reducing model complexity 
+				ANN doesnt regularize which is why SVM is better 
+				
+				dropout: 
+					inject noise into the model and see if its resilient 
+					drops nodes that only work in highly selective combinations 
+					(spurious co-adapted features)
+					
+				bagging:{
+					learns multiple models from one train set,
+					averages the output ot make predictions 
+					(ensemble learning)
+				}
+			}
+			
+			Inits for model params{
+				loss function isnt convex for ANN, so we can get stuck in local 
+				minima which might be shitty 
+				
+				def pretaining: initing model params before the training process 
+				reduces variance by fixing the starting point of gradient descent 
+				
+			}
+			
+			supervised pretraining{
+				train ANN one layer at time so that 
+				params are learned at every layer 
+				by obtaining a simpler problem,
+				rather than at the same time 
+				
+				tldr->:
+				1. create ANN w/ one hidden layer 
+				get model params 
+				2. add another layer, keep params 
+				for the first hidden layer, learn new params 
+				3. for a model with I hidden layers,
+				we do not update I-1 hidden layers 
+				but use fixed ones.
+			}
+			
+			Unsupervised pretraining{
+				find features that best explain 
+				the input data and its latent structure 
+			}
+			
+			autoencoder{
+				unsupervised ANN model 
+				reconstructs input data 
+				optimizes for lowest reconstruction error 
+				can be stacked 
+			}
+			
+		}
+		characteristics of DL{
+			1. ANN can be recycled for a different task 
+			by using pretaining
+			
+			2. dropout and regulariation reduces 
+			model complexity 
+			
+			3. autoencoders eliminate 
+			irrelevant attributes 
+			
+			4. local minima are optimized through new tech 
+			5. specialized ANN:
+				Convolutional neural nets (CNN))
+				two dimensional gridded objects / images/ comp vision 
+				recurrent neural net (RNN)
+				for sequences (processing/speech/lang)
+		}
+	}
+	
+	4.9 Support vector machines{
+		def: learns (possibly nonlinear) decision boundaries in an 
+		attribute space 
+		
+		great at regularization, can control complexity and generalization 
+		performance 
+		
+		represents the decision boundary using examples that are 
+		hard to classify (ie support vectors).
+		
+		4.9.1-margin of a separating hyperplane{
+			WTx+b=0
+			where x represents the attribute space and W,b are 
+			parameters of a hyperplane. 
+			
+			a data instance belongs to either side of the plane.
+			we want a hyperplane that separates class instances on 
+			either side.
+			
+			def linearly separable:
+				when there's a hyperplane that perfectly separates the two classes.
+				
+			def margin hyperplanes:
+				the point of contact with the first 
+				instance of each class that we get by moving a hyperplane 
+				parallel to its direction 
+				
+			def margin:
+				the distance between the margin hyperplanes and the hyperplane 
+				itself. (ie, how far away is the closest point of each class to 
+				our plane)
+				
+			we want maximum margin hyperplanes! 
+		}
+		
+		linear SVM{
+			searches for a separating hyperplane with the biggest 
+			margin. maximal margin classifier.
+			
+			OPTIMIZATION:
+			maximize the margin by minimizing ||w||
+			formula:
+			the distance between H0 and H1 (the separator and the margin)
+			is:
+			
+			|w*x+b| / ||w|| = 1 / ||w|| 
+			the distance between H1 and H2 is 2 / ||w|| 
+			so that's we want to minimize |\w||  
+			
+		}
+		
+		learning model params{
+			def support vectors:
+			the lagrange multiplier in the complementary slackness condition is > 0
+			only when a point lies exactly on margin hyperplane. only a small number 
+			of instances satisfy this, they are support vectors.
+			
+			training instances with a largrange = 0 do not affect weights.
+			w can be expressed only in terms of support vectors.
+		}
+		
+		soft-margin SVM{
+			tldr we can tolerate a small number of errors using the softmargin approach.
+			allows us to learn linear planes where classes are not linearly separable.
+			we do this with a slack variable for each instance, which 
+			relaxes the assumption about an instance satisfying the 
+			hyerplane formula yi(wTxi+b)>=1 
+			
+			with slack variables, we want to maximize margin while minimizing slack 
+			where possible. we do this with a hyperparam C that makes a tradeoff 
+			between maximizing one and minimizing the other.
+			
+			increasing C avoids misclassification. 
+			for large values of C, we get a smaller margin hyperplane.
+			a small value of C will cause the optimizer to look for a bigger margin even if it misclassifiers. 
+		
+			SVMs use a hinge loss function to make the optimization 
+			problem convex.
+		}
+		
+		nonlinear SVM{
+			nonlinear decision boundaries created by trasnforming the attribute space 
+			so that a linear hyperplane can divide them in the new transformed space 
+			using the SVM approach, that gets projecte back to the original
+			attribute space.
+			
+			the curse of dimensionality is avoided with kernel functions 
+			
+			kernel function p173/471{
+				a similarity function that is the dot product 
+				of a higher dimensonal space, and can be used in a linear classifier.
+				thats how NVSM works.
+				
+				kernel functions can compute this dot product/similarity value 
+				without moving the data points outside the original space.
+				
+				the inner product between two vectors is a measure of similarity
+				the kernel trick is a way of computing the similarity as a function 
+				of the original attributes. K(u,v) = phi(u),phi(v) = f(u,v)
+			}
+		
+			learning a nonlinear SVM{
+				the linear hyperplane in the transformed space 
+				can be expressed as wTphi(x)+b = 0
+				we substitute phi(x) for x in the formulation to obtain 
+				a new opitmization problem.
+				
+				the dual problem allows us to solve for 
+				the dot product of xi and xj 
+				tldr by using kernel functions we can work with the 
+				dot products while only dealing with the 
+				original attribute space and with less calculation.
+			}
+			
+			properties of SVM{
+				1. convex optimization problem that lets us find the 
+				global minimum. ANN and rule classifiers use a greedy
+				strat and only find the local minima 
+				2.regularizes params by maximizing the margin of the decision 
+				boundary using a hyperparameter C to balance complexity 
+				and model errors 
+				3. handles irrelevant attribs by learning zero weight 
+				corresponding to each attribute as well 
+				as redundant attributes.
+			}
+		}
+	}
+	
+	4.10 Ensemble Methods{
+		tldr construct a bunch of base classifiers and use them as votes.
+		ex: 25 binary classifiers with an error rate of 0.35 are used 
+		as equal votes on what to classify. 
+		
+		if each of them has an independent error rate, then we have a 0.06 
+		error rate instead of 0.35. 
+		
+		methods{
+		
+			1. manipulation: resample original data into 
+			training sets for each model.
+			related: bagging, boosting 
+			
+			2. manipulate input features:
+			a subset of input features forms each training set 
+			based on chance or domain xpertise.
+			random forest is an ensemble method that manipulates 
+			input features with trees as its base classifier.
+			
+			3. class label manipulation (when # of classes is large):
+			transform into a binary classification problem by assigning 
+			all class labels in subset A0 -> 0 and A1-> 1
+			relabeled data trains a base clasifier several times.
+			
+			each base classifier gives its vote to either class.
+			ex: error-correcting output coding 
+			
+			4. algorith manipulation:
+			applying the sale algorithm with different tuning params 
+			can result in different classifiers 
+			ex: several ANNs with different initial weights for neurons.
+			ex: random forest with randomness injection 
+		
+		}
+		
+		formula:
+		C*(x) = f(C1(x),C2(x),...,CK(x))
+		where f is a function that combines the ensemble responses.
+		simple: majority vote 
+		less simple: weighted majority vote based on accuracy/relevance 
+		
+		def unstable classifiers: base classifiers sensitive to minor 
+		changes in the training set. they have a low bias and a high variance.
+		aggregating multiple unstable classifiers can min. variance w/o 
+		worsening bias.
+		
+		bias-variance decomposition{
+			def bias: diff(y-avg,y-hat-avg)
+			where y-hat is our prediction set and y is our real value set.
+			
+			gen.error(m) = c1 * noise + bias(m) + c2*variance(m) 
+			where c1,c2 are constants that depend on the training/test sets.
+			
+			noise can be understood as the non-deterministic nature of the output,
+			where the same set of attributes can have different y-values.
+		}
+		
+		bagging/bootstrapping{
+		
+			repeatedly samples from a dataset based on a uniform prob. distribution.
+			
+			ex:
+			let x = one-dim attrib 
+			y = response/class label 
+			
+			m = one level binary decision tree with cond. x<= k 
+			without bagging, the best decision tree produces splits at either 
+			0.35 or x <= .75, with 70% accuracy either way. 
+			
+			if we apply bagging and get 10 bootstrap samples, we get better accuracy 
+			
+			bagging pseudocode:
+			let k = num of bootstrap samples 
+			for i = 1 to k 
+				create a bootstrap sample of size N, Di 
+				train a classifier Ci on Di 
+			end 
+			
+			C*(X) = argmax y *sum(i delta(Ci(x)=y))
+			delta = 1 if the argument is true, 0 if otherwise 
+			
+			bagging creates an ensemble of k models that can mimic a 2-depth 
+			tree in a one-depth space.
+		
+		}
+		
+		boosting{
+			iterative proc to change the distribution of examples for classifiers 
+			so they focus on examples that are hard to classify. 
+			boosting assigns a weight to each training example and 
+			can be used to learn a model biased toward examples with higher weight. 
+			
+			process:
+				1. each obj is given weight 1/N
+				2. a sample is drawn according to the distribution to get a 
+				new training set. we create C1 and test it on the original data.
+				the weights are updated for examples that are incorrectly classified.
+			
+			ADABOOST:
+			let xi,yj denote a set of N training examples.
+			the importance of a base classifier Ci depends on its error rate:
+			1/N(sigma(i) = 1 / N * (Wj |(ci(xj)!=yj))
+			
+			the importance of a classifier is a function of its error rate.
+			(ai). through each iteration, the weights are updated for each classifier 
+			to be higher if the error rate is higher, and lower if the error rate 
+			is lower, prioritizing models with poor accuracy.
+			
+			if any intermediate round produces an error higher than 50%,
+			the weights go back to their original vals and we try agian.
+		}
+		
+		Random Forests{
+		
+			def: ensemble of decorrelated decision trees.
+			use bagging by using a different bootstrap sample for 
+			each decision tree. 
+			
+			difference: at every internal nodeo f a tree,
+			the best splitting criterion is chosen among a small set of 
+			random attribs.
+			
+			walkthrough: 
+				1. construct bootstrap Di from the training set D by 
+				randomly taking n instances. 
+				
+				2. use Di to learn a tree Ti.
+				at every internal node, randomly sample p attributes 
+				and choose an attribute that shows the maximum impurity 
+				reduction. do this until every leaf is pure. 
+				
+			once this happens, the average prediction of trees 
+			is used as the ifnal prediction.
+			random forests are unpruned with high variance and low bias.
+			
+			RF is imprtial. we sample Di independetly for each Ti 
+			and split at each node using randomly selected attributes.
+		
+			tuning parameter/hyperparam: p (number of attributes selected at each node)
+			common suggestions: log2d + 1 and d 
+			we can also tune over a validation set.
+			
+			def oob: 
+				ex: ensemble with Ti built on bootstrap Di.
+				every training instance x will be used for 63% of base 
+				classifiers, we call x an OUT OF THE BAG SAMPLE (OOB) for 
+				the other 27% base classifiers. 
+				
+				if we use these remaining 27% classifiers to make predictions on x,
+				we get an oob error by taking the majority vote and comparing with 
+				the label. the OOB error is a reliable estimate of the generalization error. 
+				
+				random forests do not need a separate partition for validation.
+			
+			properties:
+			1. better performance than adaboost 
+			2. more robust to overfitting than adaboost and much faster 
+		
+		}
+	}
+	
+	4.11 The Class Imbalance Problem{
+		ex: fradulent transactions are outnumber by legitimate ones,
+		positive tests for rare diseases outweighed by negative ones. 
+		
+		challenges:
+		1. creates bias towards improving the majority class in deep learning 
+		2. hard to find sufficiently labeled samples 
+		3. the formula for accuracy (TP+TN/FP+FN+TN+TP) does not 
+		evaluate models well when there's an imbalance.
+		ex: if 1% of transactions are fake, a model can have 99% accuracy and still 
+		suck because it predicts all positive.
+		
+		Building classifiers w/ imbalance{
+			1. ensure algorithm is learned over a set with 
+			adequare representation
+				solutions: oversampling, undersampling 
+				
+			2. adapt classifications of the model to match 
+			the requirements of an imbalanced test set. 
+		}
+		
+		oversampling & undersampling{
+			undersampling: frequency of major class is reduce to match minor class 
+			oversampling: artificial examples of the minority class are made to match majority 
+			the effect of oversampling can also be achieved by giving minority instances 
+			a higher weight.
+			
+			applies to: ANN, SVM, LOG_REG
+			
+			pitfalls of oversmapling: lower variance for replicated data 
+			has more bias, less generalization power.
+			
+			alternative: Synthetic minority oversampling (SMOTE):
+			we get the KNN of every target instance, and generate a synthetic 
+			instance at some intermediate point between x and its closest neighbor 
+			until we get what we want.
+		}
+		
+		scoring test instances{
+			ex: scoring each test instance so that a higher score means 
+			a higher likelihood of being a class.
+			(monotonic - s(x1) > s(x2) = p(y=1|x1) > p(y=1|x2))
+			ex: signed distance of an instance from the positive 
+			margin of a hyperplane, naive bayes, logistic regresison, etc. 
+		}
+		
+		evaluating performance{
+			confusion matrix (++,+-,--,-+)
+			problem: doesnt take into account skew - presence of positives 
+			and negatives in the data (a = p/p+n)
+			a = tp+fn/ (tp+fp+fn+tn)
+			
+		}
+		
+		optimal score threshold{
+			given a suitable evaluation measure E and distribution of scores,
+			the optimal threshold for scores s* is achieved thru:
+			1. sort s(x) ascending 
+			2. consider the model assigns an instance x as positive only if 
+			s(x)>s. E(s) is the performance of this model 
+			3. find the s* that maximizes E(s)
+			s* = argmaxs E(s)
+		}
+		
+		aggregate performance evaluation{
+			def assessing performance of a model over a range of score 
+			threshold. emphasis is not on evaluating a classifier corresponding 
+			to an optimal score, but to asses the quality of ranking produced 
+			by the model.
+			
+			graphs:
+			ROC curve 
+			precision-recall 
+		}
+	}
+	
+	4.12 Multiclass problem{
+		let y = {y1..yk} be the set of classes for input data 
+		
+		approaches 
+		
+		1.(one against rest) decompose into K binary problems 
+		for each yi, all yi are positive, all y!i are negative,
+		and we construct a binary classifier to separate them.
+		
+		if an instance is negative classified, all classes except yi 
+		get a vote. this leads to ties, so we can trasnform the outputs 
+		into probability estimates and assign the instance to the highest p class.
+		
+		2. (one against one) constructs K(K-1)/2 binary classifers 
+		where each classifier is used to distinguish between yi,yj 
+		for all y. we ignore all other instances and use a voting scheme
+		
+		EXAMPLE:
+		y = {y1...y4}
+		
+		combinations:
+		+ y1 y1 y1 y2 y2 y3 
+		- y2 y3 y4 y3 y4 y4 
+		classification
+		  +  +  -  +  -  + 
+		  
+		votes:
+		y1: ++ 
+		y2: + 
+		y3: + 
+		y4: --
+		
+		y1 and y4 are tied.
+		
+		ERROR CORRECTING OUTPUT CODING{
+			problem: multiclass solutions listen above (1-r,1-1) are very 
+			prone to binary classification errors.
+			
+			if at least one classifier is wrong, we end up with a tie.
+			
+			solution: ECOC - each class is represented by a unique bit string 
+			length n as the codwword. we train n classifiers to predict 
+			each bit of the codeword. the predicted class of an instance is given 
+			by the codeword whose hamming distance is closest to the codeword 
+			produced by the binary classifiers. 
+		}
+	}
+}
+
+Larose, C., & Larose, D. (2019). Data Science Using Python and R. John Wiley & Sons, Inc.
+Chapter 9
+Chapter 13
+
+linear regression as a general linear model (GLM){
+
+	if the response var is normally distr. use lin-reg 
+	else:
+	
+	link function where 
+	g(mu) = mu 
+	
+	y=b0 +b1x1+...+bnxn = XB
+	XB = g(mu) = mu 
+
+}
+
+logistic regression as a general linear model{
+
+XB = ln (mu/1-mu)
+
+}

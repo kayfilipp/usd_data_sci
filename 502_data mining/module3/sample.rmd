@@ -1,0 +1,71 @@
+#y-real, x-predicted
+cost.C5 <- matrix(c(0,4,1,0), byrow = TRUE, ncol=2)
+dimnames(cost.C5) <- list(c("0", "1"), c("0", "1"))
+cost.C5 
+
+#apparently C5 crashes when nonstandard chars are involved, so here I go renaming everything 
+
+setwd("C:/Users/Filipp/Documents/usd_data_sci/502_data mining/module1/Website Data Sets")
+
+train = read.csv("adult_ch6_training")
+test =  read.csv("adult_ch6_test")
+
+#factorize and redefine as 1,0 to fit our matrix
+train$Marital.status = factor(train$Marital.status)
+train$Income = factor(train$Income)
+train$Income = ifelse(train$Income==">50K",1,0)
+
+#factorize our test response variable to make it comparable during metric calculation 
+test$Income = factor(test$Income)
+test$Income = ifelse(test$Income==">50K",1,0)
+
+names(train) = c("MaritalStatus","Income","CapGainsLosses")
+names(test) = c("MaritalStatus","Income","CapGainsLosses")
+train$Income = as.factor(train$Income)
+train$MaritalStatus = as.factor(train$MaritalStatus)
+C5.costs <- C5.0(Income ~ MaritalStatus + CapGainsLosses, data = train,cost=cost.C5,control = C5.0Control(minCases=75))
+
+costs.pred <- predict(object = C5.costs, newdata = test)
+results <- data.frame(costs.pred,test$Income)
+names(results) <- c("predicted","actual")
+```
+
+Question 29. Evaluate your predictions from Model 2 using the actual response values from the test data set. Add Overall Model Cost and Profit per Customer to the Model Evaluation Table. Calculate all the measures from the Model Evaluation Table.
+
+```{r}
+#we already calculated the formulae for our performance metrics, so we can just recalculated tp,fp,tn,etc.
+tp = length(which(results$predicted==1 & results$actual==1))
+tn = length(which(results$predicted==0 & results$actual==0))
+fp = length(which(results$predicted==1 & results$actual==0))
+fn = length(which(results$predicted==0 & results$actual==1))
+
+a = accuracy(tp,tn,fp,fn)
+se=sensitivity(tp,fn)
+sp=specificity(fp,tn)
+p = precision(tp,fp)
+r = recall(tn,fp)
+er=error_rate(a)
+fone = f_1(p,r)
+ftwo = f_2(p,r)
+fhalf= f_0.5(p,r)
+
+paste("accuracy",a)
+paste("sensitivity",se)
+paste("specificity",sp)
+paste("precision",p)
+paste("recall",r)
+paste("err. rate",er)
+paste("F1",fone)
+paste("F2",ftwo)
+paste("F0.5",fhalf)
+
+#overall model cost 
+# TN*Cost(tn) + FP*Cost(FP) + FN*Cost(FN) + TP*Cost(TP)
+overall_cost = (tn*0)+(fp*4)+(fn*1)+(tp*0)
+
+#overall profit per customer
+#-(overall_cost)/total 
+profit_per_customer = -1 * overall_cost / nrow(test)
+
+paste("overall_cost",overall_cost)
+paste("profit per customer",profit_per_customer)
